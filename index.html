@@ -270,6 +270,10 @@ button,select,input{font-family:inherit;}
       </div>
       <div class="dur-hint" id="durHint"></div>
     </div>
+    <div class="form-row">
+      <label class="form-label">Remark <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(ถ้ามี)</span></label>
+      <input class="fsel" id="fRemark" type="text" placeholder="หมายเหตุเพิ่มเติม..." style="background:var(--bg);">
+    </div>
     <div class="modal-actions">
       <button class="btn-delete" id="btnDel" style="display:none" onclick="deleteOp()">ลบ</button>
       <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
@@ -359,16 +363,14 @@ const DOCTORS=[
 // ── STATE ─────────────────────────────────────────────
 let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null;
 
-// Start from June 29 2026 = Monday, month index 5 (June)
+// Start from today June 9 2026
 const _now=new Date();
-const START_YEAR=2026, START_MONTH=5; // June = month index 5
+const START_YEAR=_now.getFullYear(), START_MONTH=_now.getMonth();
 
-// If today >= June 29 2026 → use today's month, else use June 2026
-const START_DATE=new Date(2026,5,29); // June 29 2026
-const _afterStart = _now >= START_DATE;
-let curYear  = _afterStart ? _now.getFullYear() : START_YEAR;
-let curMonth = _afterStart ? _now.getMonth()    : START_MONTH;
-let cYear    = curYear,  cMonth = curMonth;
+// Always use today's month
+const _afterStart=true;
+let curYear=_now.getFullYear(), curMonth=_now.getMonth();
+let cYear=curYear, cMonth=curMonth;
 
 // current week/day
 let curWeek=0, curDay=0, cWeek=0, cDay=0;
@@ -626,6 +628,7 @@ function renderMyTab(){
             ${op.diagnosis?`<div class="op-meta" style="color:var(--muted2);font-style:italic;">${op.diagnosis}</div>`:''}
             <div class="op-name">${op.op}</div>
             <div class="op-meta">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
+            ${op.remark?`<div class="op-meta" style="color:var(--warn);">📝 ${op.remark}</div>`:''}
           </div>
         </div>`;
       });
@@ -690,6 +693,7 @@ async function renderCentralTab(){
             ${op.diagnosis?`<div style="font-size:.65rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${op.diagnosis}</div>`:''}
             <div class="cv-op-name">${op.op}</div>
             <div style="font-size:.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
+            ${op.remark?`<div style="font-size:.65rem;color:var(--warn);margin-top:2px;">📝 ${op.remark}</div>`:''}
           </div>`;
         });
       }
@@ -718,6 +722,7 @@ function openAdd(room,session){
   document.getElementById('modalConflict').classList.remove('show');
   document.getElementById('fOpCustom').style.display='none';
   document.getElementById('fDiag').value='';
+  document.getElementById('fRemark').value='';
   buildOpSelect();
   onTimeChange();
   document.getElementById('overlay').classList.remove('hidden');
@@ -731,6 +736,7 @@ function openEdit(id,room,session){
   setOpVal(op.op);
   document.getElementById('fDoc').value=op.doctor;
   document.getElementById('fDiag').value=op.diagnosis||'';
+  document.getElementById('fRemark').value=op.remark||'';
   document.getElementById('modalTitle').innerHTML=`✏️ แก้ไข Operation<span class="modal-sub">${room} · ${session==='am'?'เช้า':'บ่าย'}</span>`;
   document.getElementById('btnDel').style.display='block';
   checkConflict();onTimeChange();
@@ -823,13 +829,14 @@ function saveOp(){
   const opVal=getOpVal();
   if(!opVal){alert('กรุณาระบุชื่อ operation');return;}
   const diag=document.getElementById('fDiag').value.trim();
+  const remark=document.getElementById('fRemark').value.trim();
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
   let ops=getOps(k);
   const doc=document.getElementById('fDoc').value;
   if(editId){
-    ops=ops.map(o=>o.id===editId?{...o,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e}:o);
+    ops=ops.map(o=>o.id===editId?{...o,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark}:o);
   }else{
-    ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e}];
+    ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark}];
   }
   opsData[k]=ops;
   scheduleSave();closeModal();renderMyTab();renderCentralTab();
