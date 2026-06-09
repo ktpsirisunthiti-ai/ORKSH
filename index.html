@@ -327,6 +327,11 @@ const DAYS=["จันทร์","อังคาร","พุธ","พฤหั�
 const THAI_MONTHS=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 
 const ADMIN_ID="Admin";
+const VIEWER_USER={
+  id:"Viewer", password:"xxx",
+  names:[], dept:"surgery", isViewer:true,
+  slots:[]
+};
 const ALL_DOCTOR_NAMES=["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์","นพ.วีระพงศ์","นพ.พิษณุ","นพ.กันต์ชนะ","นพ.ภัทรพล","นพ.กฤษฎาภร","นพ.บุญยกร","พ.อารียา","พ.ฤทธ์","พญ.ทัชชา","นพ.จารุสิทธิ์","พญ.วิชญาพร","นพ.ธีรศักดิ์","นพ.ณัฐวัฒน์","พญ.ชัชฎาภรณ์","พญ.ณัฐนรี","พญ.ภคินี"];
 const ALL_ROOMS=["OR-1","OR-2","OR-3","OR-4"];
 const ALL_SESSIONS=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
@@ -430,8 +435,10 @@ function setConn(ok){
 // ── LOGIN / LOGOUT ───────────────────────────────────
 function doLogin(){
   const pw=document.getElementById('pwInput').value.trim();
-  // check admin first
-  let doc = pw===ADMIN_USER.password ? ADMIN_USER : DOCTORS.find(d=>d.password===pw);
+  // check admin and viewer first
+  let doc = pw===ADMIN_USER.password ? ADMIN_USER
+          : pw===VIEWER_USER.password ? VIEWER_USER
+          : DOCTORS.find(d=>d.password===pw);
   if(!doc){
     document.getElementById('pwErr').textContent='❌ รหัสผ่านไม่ถูกต้อง';
     document.getElementById('pwInput').value='';
@@ -443,7 +450,7 @@ function doLogin(){
   document.getElementById('pwInput').value='';
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('loadingScreen').style.display='flex';
-  document.getElementById('loadSpinner').style.borderTopColor=doc.isAdmin?'#58a6ff':DEPT_COLORS[doc.dept];
+  document.getElementById('loadSpinner').style.borderTopColor=doc.isAdmin?'#58a6ff':doc.isViewer?'#3fb950':DEPT_COLORS[doc.dept];
   document.getElementById('loadMsg').textContent='กำลังโหลดข้อมูล…';
   loadAllData();
 }
@@ -466,16 +473,20 @@ async function loadAllData(){
   document.getElementById('loadingScreen').style.display='none';
 
   // setup dept color on app
-  const dc=currentUser.isAdmin?'#58a6ff':DEPT_COLORS[currentUser.dept];
-  const db=currentUser.isAdmin?'rgba(88,166,255,.15)':DEPT_BG[currentUser.dept];
+  const dc=currentUser.isAdmin?'#58a6ff':currentUser.isViewer?'#3fb950':DEPT_COLORS[currentUser.dept];
+  const db=currentUser.isAdmin?'rgba(88,166,255,.15)':currentUser.isViewer?'rgba(63,185,80,.15)':DEPT_BG[currentUser.dept];
   document.documentElement.style.setProperty('--dc',dc);
   document.documentElement.style.setProperty('--db',db);
 
-  document.getElementById('deptBadge').textContent=currentUser.isAdmin?'🔑 Admin':DEPT_NAMES[currentUser.dept];
+  document.getElementById('deptBadge').textContent=currentUser.isAdmin?'🔑 Admin':currentUser.isViewer?'👁 ดูอย่างเดียว':DEPT_NAMES[currentUser.dept];
   document.getElementById('deptBadge').style.borderColor=dc;
   document.getElementById('deptBadge').style.background=db;
   document.getElementById('deptBadge').style.color=dc;
-  document.getElementById('topTitle').textContent=currentUser.isAdmin?'ผู้ดูแลระบบ':currentUser.names.join(' · ');
+  document.getElementById('topTitle').textContent=currentUser.isAdmin?'ผู้ดูแลระบบ':currentUser.isViewer?'View Only':currentUser.names.join(' · ');
+
+  // hide "ตารางของฉัน" tab for viewer
+  document.getElementById('tabMy').style.display=currentUser.isViewer?'none':'block';
+  if(currentUser.isViewer) switchTab('central');
 
   // init week/day: if today >= June 29 2026 use today, else use week containing June 29
   if(_afterStart){
@@ -713,6 +724,7 @@ function getDeptFromDoctor(name){
 
 // ── MODAL ─────────────────────────────────────────────
 function openAdd(room,session){
+  if(currentUser.isViewer) return;
   editId=null;modalSlot={room,session};
   const st=SESSION_TIMES[session];
   buildModalDocs();
@@ -728,6 +740,7 @@ function openAdd(room,session){
   document.getElementById('overlay').classList.remove('hidden');
 }
 function openEdit(id,room,session){
+  if(currentUser.isViewer) return;
   const op=curOps().find(o=>o.id===id);if(!op)return;
   editId=id;modalSlot={room,session};
   buildModalDocs();
