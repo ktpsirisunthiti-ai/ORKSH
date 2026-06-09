@@ -12,6 +12,12 @@
   --text:#e6edf3;--muted:#7d8590;--muted2:#9198a1;
   --warn:#e3b341;--warnbg:rgba(227,179,65,.12);
 }
+body.light-mode{
+  --bg:#f5f7fa;--surface:#ffffff;--surface2:#eef1f5;--border:#d0d7de;--border2:#b0bbc8;
+  --text:#1a1f2e;--muted:#6b7280;--muted2:#4b5563;
+  --warn:#b45309;--warnbg:rgba(180,83,9,.08);
+}
+body,*{transition:background-color .2s,border-color .2s,color .2s;}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;min-height:100vh;padding:0;}
 button,select,input{font-family:inherit;}
 
@@ -29,7 +35,7 @@ button,select,input{font-family:inherit;}
 
 /* ── LOGIN ── */
 .login-wrap{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px;}
-.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:32px 28px;width:340px;max-width:100%;text-align:center;}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:32px 28px;width:340px;max-width:100%;text-align:center;position:relative;}
 .login-logo{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;}
 .login-title{font-size:1.3rem;font-weight:800;margin-bottom:4px;}
 .login-sub{font-size:.8rem;color:var(--muted);margin-bottom:28px;}
@@ -148,6 +154,9 @@ button,select,input{font-family:inherit;}
 <!-- LOGIN -->
 <div class="login-wrap" id="loginWrap">
   <div class="login-card">
+    <div style="position:absolute;top:14px;right:14px;">
+      <button onclick="toggleTheme()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;" id="loginThemeBtn" title="เปลี่ยน theme">🌙</button>
+    </div>
     <div class="login-logo" style="color:#58a6ff;">🏥 KSH · ห้องผ่าตัด</div>
     <div class="login-title">OR Elective Schedule</div>
     <div class="login-sub">กรุณาใส่รหัสเข้าใช้งาน</div>
@@ -174,6 +183,7 @@ button,select,input{font-family:inherit;}
     <div class="topbar-right">
       <span class="sync-msg" id="syncMsg"></span>
       <span class="sync-txt"><span class="sync-dot" id="syncDot" style="background:#3d4550"></span><span id="syncTxt">กำลังเชื่อมต่อ…</span></span>
+      <button class="btn-sm" id="themeBtn" onclick="toggleTheme()" title="เปลี่ยน theme">🌙</button>
       <button class="btn-sm" onclick="doLogout()">ออกจากระบบ</button>
     </div>
   </div>
@@ -269,6 +279,28 @@ button,select,input{font-family:inherit;}
 </div>
 
 <script>
+// ── THEME ─────────────────────────────────────────────
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  const icon=isLight?'☀️':'🌙';
+  ['themeBtn','loginThemeBtn'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(btn) btn.textContent=icon;
+  });
+  localStorage.setItem('or-theme', isLight?'light':'dark');
+}
+function applyTheme(){
+  const saved=localStorage.getItem('or-theme');
+  if(saved==='light'){
+    document.body.classList.add('light-mode');
+    ['themeBtn','loginThemeBtn'].forEach(id=>{
+      const btn=document.getElementById(id);
+      if(btn) btn.textContent='☀️';
+    });
+  }
+}
+applyTheme();
+
 // ── FIREBASE ──────────────────────────────────────────
 const FB = "https://orksh-840b3-default-rtdb.asia-southeast1.firebasedatabase.app";
 async function fbGet(p){ const r=await fetch(`${FB}/${p}.json`); return r.json(); }
