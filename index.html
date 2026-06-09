@@ -129,6 +129,18 @@ button,select,input{font-family:inherit;}
 .cv-op-name{color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cv-empty{font-size:.72rem;color:var(--border2);font-style:italic;}
 
+/* ── AUDIT LOG ── */
+.log-item{display:flex;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:.78rem;align-items:flex-start;}
+.log-item:last-child{border-bottom:none;}
+.log-item:hover{background:var(--surface2);}
+.log-action{flex-shrink:0;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700;white-space:nowrap;}
+.log-add{background:rgba(63,185,80,.15);color:#3fb950;}
+.log-edit{background:rgba(88,166,255,.15);color:#58a6ff;}
+.log-delete{background:rgba(247,129,102,.15);color:#f78166;}
+.log-time{flex-shrink:0;font-family:monospace;font-size:.7rem;color:var(--muted);white-space:nowrap;}
+.log-detail{flex:1;color:var(--text);line-height:1.5;}
+.log-user{font-weight:700;color:var(--dc,#58a6ff);}
+
 /* ── MODAL ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);}
 .overlay.hidden{display:none;}
@@ -192,6 +204,7 @@ button,select,input{font-family:inherit;}
   <div class="tab-bar">
     <div class="tab active" id="tabMy" onclick="switchTab('my')">📋 ตารางของฉัน</div>
     <div class="tab" id="tabCentral" onclick="switchTab('central')">🏥 ตารางรวม</div>
+    <div class="tab" id="tabLog" onclick="switchTab('log')" style="display:none;">🔍 Audit Log</div>
   </div>
 
   <!-- MY SCHEDULE TAB -->
@@ -244,7 +257,14 @@ button,select,input{font-family:inherit;}
   </div>
 </div>
 
-<!-- MODAL -->
+  <!-- AUDIT LOG TAB -->
+  <div class="tab-content" id="contentLog">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">🔍 บันทึกการเปลี่ยนแปลงทั้งหมด</div>
+      <button class="btn-ghost" onclick="clearAuditLog()" style="font-size:.75rem;color:#f78166;border-color:#f78166;">🗑 ล้าง Log</button>
+    </div>
+    <div id="auditLogList"></div>
+  </div>
 <div class="overlay hidden" id="overlay">
   <div class="modal">
     <div class="modal-title" id="modalTitle">➕ เพิ่ม Operation<span class="modal-sub" id="modalSub"></span></div>
@@ -486,6 +506,8 @@ async function loadAllData(){
 
   // hide "ตารางของฉัน" tab for viewer
   document.getElementById('tabMy').style.display=currentUser.isViewer?'none':'block';
+  // show audit log tab for admin only
+  document.getElementById('tabLog').style.display=currentUser.isAdmin?'block':'none';
   if(currentUser.isViewer) switchTab('central');
 
   // init week/day: if today >= June 29 2026 use today, else use week containing June 29
@@ -524,8 +546,11 @@ function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveAll,800
 function switchTab(t){
   document.getElementById('tabMy').classList.toggle('active',t==='my');
   document.getElementById('tabCentral').classList.toggle('active',t==='central');
+  document.getElementById('tabLog').classList.toggle('active',t==='log');
   document.getElementById('contentMy').classList.toggle('show',t==='my');
   document.getElementById('contentCentral').classList.toggle('show',t==='central');
+  document.getElementById('contentLog').classList.toggle('show',t==='log');
+  if(t==='log') renderAuditLog();
 }
 
 // ── MONTH/WEEK NAV (MY) ──────────────────────────────
@@ -836,6 +861,58 @@ function checkConflict(){
   else el.classList.remove('show');
 }
 
+// ── AUDIT LOG ─────────────────────────────────────────
+async function writeLog(action, detail){
+  try{
+    const entry={
+      ts: Date.now(),
+      user: currentUser.id,
+      action, // 'add','edit','delete'
+      detail
+    };
+    const logKey=`audit_log/${entry.ts}_${genId()}`;
+    await fetch(`${FB}/${logKey}.json`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(entry)
+    });
+  }catch(e){ /* non-critical */ }
+}
+
+async function renderAuditLog(){
+  const list=document.getElementById('auditLogList');
+  list.innerHTML=`<div style="color:var(--muted);font-size:.82rem;padding:16px 0;">กำลังโหลด...</div>`;
+  try{
+    const data=await fbGet('audit_log');
+    if(!data||!Object.keys(data).length){
+      list.innerHTML=`<div style="color:var(--muted);font-size:.82rem;padding:16px 0;text-align:center;">ยังไม่มีบันทึก</div>`;
+      return;
+    }
+    const entries=Object.values(data).sort((a,b)=>b.ts-a.ts); // newest first
+    const actionLabel={add:'เพิ่ม',edit:'แก้ไข',delete:'ลบ'};
+    const actionCls={add:'log-add',edit:'log-edit',delete:'log-delete'};
+    let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">`;
+    entries.forEach(e=>{
+      const d=new Date(e.ts);
+      const timeStr=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      html+=`<div class="log-item">
+        <div class="log-time">${timeStr}</div>
+        <div class="log-action ${actionCls[e.action]||'log-edit'}">${actionLabel[e.action]||e.action}</div>
+        <div class="log-detail"><span class="log-user">${e.user}</span> · ${e.detail}</div>
+      </div>`;
+    });
+    list.innerHTML=html+'</div>';
+  }catch(err){
+    list.innerHTML=`<div style="color:#f78166;font-size:.82rem;padding:16px 0;">โหลด log ไม่ได้</div>`;
+  }
+}
+
+async function clearAuditLog(){
+  if(!confirm('ล้าง Audit Log ทั้งหมด?')) return;
+  await fetch(`${FB}/audit_log.json`,{method:'DELETE'});
+  renderAuditLog();
+}
+
 function saveOp(){
   const s=+document.getElementById('fStart').value,e=+document.getElementById('fEnd').value;
   if(e<=s){alert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม');return;}
@@ -852,10 +929,23 @@ function saveOp(){
     ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark}];
   }
   opsData[k]=ops;
+  const dt=getDate(curYear,curMonth,curWeek,curDay);
+  const dateStr=`${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]}`;
+  if(editId){
+    writeLog('edit',`${modalSlot.room} ${DAYS[curDay]} ${dateStr} · ${doc} · ${opVal}`);
+  } else {
+    writeLog('add',`${modalSlot.room} ${DAYS[curDay]} ${dateStr} · ${doc} · ${opVal}`);
+  }
   scheduleSave();closeModal();renderMyTab();renderCentralTab();
 }
 function deleteOp(){
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
+  const op=getOps(k).find(o=>o.id===editId);
+  if(op){
+    const dt=getDate(curYear,curMonth,curWeek,curDay);
+    const dateStr=`${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]}`;
+    writeLog('delete',`${op.room} ${DAYS[curDay]} ${dateStr} · ${op.doctor} · ${op.op}`);
+  }
   opsData[k]=getOps(k).filter(o=>o.id!==editId);
   scheduleSave();closeModal();renderMyTab();renderCentralTab();
 }
