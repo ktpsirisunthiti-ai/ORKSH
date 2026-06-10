@@ -46,9 +46,9 @@ button,select,input{font-family:inherit;}
 .login-btn:hover{opacity:.85;}
 
 /* ── MAIN LAYOUT ── */
-.app{display:none;min-height:100vh;flex-direction:column;}
-.app.show{display:flex;}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+.app{display:none;}
+.app.show{display:block;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;flex-shrink:0;}
 .topbar-left{display:flex;align-items:center;gap:12px;}
 .dept-badge{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid var(--dc);background:var(--db);color:var(--dc);}
 .topbar-title{font-size:1rem;font-weight:700;}
@@ -61,10 +61,10 @@ button,select,input{font-family:inherit;}
 .btn-sm.active{border-color:#58a6ff;color:#58a6ff;background:rgba(88,166,255,.1);}
 
 /* ── TABS ── */
-.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 18px;}
+.tab-bar{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 18px;flex-shrink:0;}
 .tab{padding:10px 18px;font-size:.85rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;margin-bottom:-1px;}
 .tab.active{color:var(--text);border-bottom-color:#58a6ff;}
-.tab-content{display:none;padding:16px 18px;flex:1;}
+.tab-content{display:none;padding:14px 18px;}
 .tab-content.show{display:block;}
 
 /* ── CONTROLS ── */
@@ -203,12 +203,13 @@ button,select,input{font-family:inherit;}
   <!-- Tabs -->
   <div class="tab-bar">
     <div class="tab active" id="tabMy" onclick="switchTab('my')">📋 ตารางของฉัน</div>
+    <div class="tab" id="tabHistory" onclick="switchTab('history')">📜 ประวัติของฉัน</div>
     <div class="tab" id="tabCentral" onclick="switchTab('central')">🏥 ตารางรวม</div>
     <div class="tab" id="tabLog" onclick="switchTab('log')" style="display:none;">🔍 Audit Log</div>
   </div>
 
   <!-- MY SCHEDULE TAB -->
-  <div class="tab-content show" id="contentMy">
+  <div class="tab-content show" id="contentMy" style="display:block;min-height:0;">
     <div class="controls">
       <div class="ctrl-group">
         <div class="ctrl-label">เดือน</div>
@@ -256,6 +257,33 @@ button,select,input{font-family:inherit;}
     <div id="centralGrid" class="central-grid"></div>
   </div>
 </div>
+
+  <!-- HISTORY TAB -->
+  <div class="tab-content" id="contentHistory">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-end;">
+      <div class="ctrl-group">
+        <div class="ctrl-label">แสดง</div>
+        <select class="fsel" id="histFilter" onchange="renderHistory()" style="min-width:150px;">
+          <option value="all">ทั้งหมด</option>
+          <option value="upcoming">🔜 กำลังจะมาถึง</option>
+          <option value="past">✅ ผ่านมาแล้ว</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">ตั้งแต่เดือน</div>
+        <select class="fsel" id="histMonthFrom" onchange="renderHistory()" style="min-width:130px;">
+          <option value="all">ทุกเดือน</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">ถึงเดือน</div>
+        <select class="fsel" id="histMonthTo" onchange="renderHistory()" style="min-width:130px;">
+          <option value="all">ทุกเดือน</option>
+        </select>
+      </div>
+    </div>
+    <div id="historyList" style="min-height:0;"></div>
+  </div>
 
   <!-- AUDIT LOG TAB -->
   <div class="tab-content" id="contentLog">
@@ -504,8 +532,9 @@ async function loadAllData(){
   document.getElementById('deptBadge').style.color=dc;
   document.getElementById('topTitle').textContent=currentUser.isAdmin?'ผู้ดูแลระบบ':currentUser.isViewer?'View Only':currentUser.names.join(' · ');
 
-  // hide "ตารางของฉัน" tab for viewer
+  // hide "ตารางของฉัน" and history tab for viewer
   document.getElementById('tabMy').style.display=currentUser.isViewer?'none':'block';
+  document.getElementById('tabHistory').style.display=currentUser.isViewer?'none':'block';
   // show audit log tab for admin only
   document.getElementById('tabLog').style.display=currentUser.isAdmin?'block':'none';
   if(currentUser.isViewer) switchTab('central');
@@ -544,13 +573,18 @@ function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveAll,800
 
 // ── TABS ──────────────────────────────────────────────
 function switchTab(t){
-  document.getElementById('tabMy').classList.toggle('active',t==='my');
-  document.getElementById('tabCentral').classList.toggle('active',t==='central');
-  document.getElementById('tabLog').classList.toggle('active',t==='log');
-  document.getElementById('contentMy').classList.toggle('show',t==='my');
-  document.getElementById('contentCentral').classList.toggle('show',t==='central');
-  document.getElementById('contentLog').classList.toggle('show',t==='log');
+  ['my','history','central','log'].forEach(id=>{
+    const capId=id.charAt(0).toUpperCase()+id.slice(1);
+    const tab=document.getElementById('tab'+capId);
+    const content=document.getElementById('content'+capId);
+    if(tab) tab.classList.toggle('active', t===id);
+    if(content){
+      content.style.display = (t===id) ? 'block' : 'none';
+      content.classList.toggle('show', t===id);
+    }
+  });
   if(t==='log') renderAuditLog();
+  if(t==='history') renderHistory();
 }
 
 // ── MONTH/WEEK NAV (MY) ──────────────────────────────
@@ -859,6 +893,113 @@ function checkConflict(){
   const conflict=ops.some(o=>o.id!==editId&&o.doctor===doc&&overlaps({startMin:s,endMin:e},o));
   if(conflict){el.textContent=`⚠️ ${doc} มี operation ซ้อนทับในช่วงนี้`;el.classList.add('show');}
   else el.classList.remove('show');
+}
+
+// ── HISTORY ───────────────────────────────────────────
+function renderHistory(){
+  const container=document.getElementById('historyList');
+  const dc=currentUser.isAdmin?'#58a6ff':DEPT_COLORS[currentUser.dept];
+  const myNames=currentUser.isAdmin?ALL_DOCTOR_NAMES:currentUser.names;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const filterVal=document.getElementById('histFilter').value;
+  const fromSel=document.getElementById('histMonthFrom');
+  const toSel=document.getElementById('histMonthTo');
+
+  // collect all ops
+  const all=[];
+  Object.entries(opsData).forEach(([key,ops])=>{
+    if(!ops||!Array.isArray(ops)) return;
+    const parts=key.split('_');
+    if(parts.length!==4) return;
+    const [y,m,w,d]=parts.map(Number);
+    const dt=getDate(y,m,w,d);
+    dt.setHours(0,0,0,0);
+    ops.forEach(op=>{
+      if(!myNames.includes(op.doctor)) return;
+      all.push({...op,_date:dt,_y:y,_m:m,_w:w,_d:d});
+    });
+  });
+
+  // build month options sorted
+  const months=[...new Set(all.map(op=>`${op._y}_${String(op._m).padStart(2,'0')}`))].sort();
+  const monthKeys=months.map(k=>{ const [y,m]=k.split('_'); return `${y}_${+m}`; });
+
+  const prevFrom=fromSel.value, prevTo=toSel.value;
+  const optHtml='<option value="all">ทุกเดือน</option>'+monthKeys.map(k=>{
+    const [y,m]=k.split('_').map(Number);
+    return `<option value="${k}">${THAI_MONTHS[m]} ${y+543}</option>`;
+  }).join('');
+  fromSel.innerHTML=optHtml;
+  toSel.innerHTML=optHtml;
+  if(monthKeys.includes(prevFrom)) fromSel.value=prevFrom;
+  if(monthKeys.includes(prevTo)) toSel.value=prevTo;
+
+  const fromKey=fromSel.value;
+  const toKey=toSel.value;
+
+  // filter
+  let list=all.filter(op=>{
+    const isPast=op._date<today;
+    if(filterVal==='upcoming'&&isPast) return false;
+    if(filterVal==='past'&&!isPast) return false;
+    const opKey=`${op._y}_${op._m}`;
+    if(fromKey!=='all'){
+      const [fy,fm]=fromKey.split('_').map(Number);
+      if(op._y<fy||(op._y===fy&&op._m<fm)) return false;
+    }
+    if(toKey!=='all'){
+      const [ty,tm]=toKey.split('_').map(Number);
+      if(op._y>ty||(op._y===ty&&op._m>tm)) return false;
+    }
+    return true;
+  });
+
+  // sort: upcoming → nearest first, past → newest first
+  list.sort((a,b)=>{
+    const aFut=a._date>=today, bFut=b._date>=today;
+    if(aFut&&bFut) return a._date-b._date||a.startMin-b.startMin;
+    if(!aFut&&!bFut) return b._date-a._date||a.startMin-b.startMin;
+    return aFut?-1:1; // upcoming first
+  });
+
+  if(!list.length){
+    container.innerHTML=`<div style="color:var(--muted);font-size:.85rem;padding:24px 0;text-align:center;">ไม่มีรายการ</div>`;
+    return;
+  }
+
+  let html=`<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px;">${list.length} รายการ</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">`;
+
+  list.forEach((op,idx)=>{
+    const isPast=op._date<today;
+    const isToday=op._date.getTime()===today.getTime();
+    const dateStr=`${op._date.getDate()} ${THAI_MONTHS[op._date.getMonth()]} ${op._date.getFullYear()+543}`;
+    const sessLabel=op.session==='am'?'☀ เช้า':'🌤 บ่าย';
+    const statusIcon=isToday?'📍':isPast?'✅':'🔜';
+    const isLast=idx===list.length-1;
+    html+=`<div style="padding:10px 16px;${isLast?'':'border-bottom:1px solid var(--border);'}display:flex;gap:10px;align-items:flex-start;cursor:pointer;"
+      onclick="jumpToDate(${op._y},${op._m},${op._w},${op._d})"
+      onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''">
+      <div style="flex-shrink:0;min-width:95px;">
+        <div style="font-size:.72rem;font-weight:700;color:${isToday?dc:isPast?'var(--muted)':'var(--text)'};">${statusIcon} ${isToday?'วันนี้':dateStr}</div>
+        <div style="font-size:.68rem;color:var(--muted);">${DAYS[op._d]} · ${sessLabel}</div>
+        <div style="font-size:.68rem;color:var(--muted);font-family:monospace;">${op.room}</div>
+      </div>
+      <div style="flex:1;border-left:3px solid ${isPast?'var(--border2)':dc};padding-left:10px;">
+        <div style="font-size:.78rem;font-weight:700;color:${isPast?'var(--muted)':dc};">${op.doctor}</div>
+        ${op.diagnosis?`<div style="font-size:.7rem;color:var(--muted2);font-style:italic;">${op.diagnosis}</div>`:''}
+        <div style="font-size:.85rem;font-weight:600;color:var(--text);">${op.op}</div>
+        <div style="font-size:.7rem;color:var(--muted);font-family:monospace;">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
+        ${op.remark?`<div style="font-size:.7rem;color:var(--warn);">📝 ${op.remark}</div>`:''}
+      </div>
+    </div>`;
+  });
+  container.innerHTML=html+'</div>';
+}
+
+function jumpToDate(y,m,w,d){
+  curYear=y; curMonth=m; curWeek=w; curDay=d;
+  switchTab('my');
 }
 
 // ── AUDIT LOG ─────────────────────────────────────────
