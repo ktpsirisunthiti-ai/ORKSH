@@ -934,8 +934,8 @@ function renderHistory(){
     doctors.map(d=>`<option value="${d}">${d}</option>`).join('');
   if(doctors.includes(prevDoc)) docSel.value=prevDoc;
 
-  // build month options sorted
-  const months=[...new Set(all.map(op=>`${op._y}_${String(op._m).padStart(2,'0')}`))].sort();
+  // build month options from actual date (not key month)
+  const months=[...new Set(all.map(op=>`${op._date.getFullYear()}_${String(op._date.getMonth()).padStart(2,'0')}`))].sort();
   const monthKeys=months.map(k=>{ const [y,m]=k.split('_'); return `${y}_${+m}`; });
 
   const prevFrom=fromSel.value, prevTo=toSel.value;
@@ -960,11 +960,13 @@ function renderHistory(){
     if(docFilter!=='all'&&op.doctor!==docFilter) return false;
     if(fromKey!=='all'){
       const [fy,fm]=fromKey.split('_').map(Number);
-      if(op._y<fy||(op._y===fy&&op._m<fm)) return false;
+      const oy=op._date.getFullYear(), om=op._date.getMonth();
+      if(oy<fy||(oy===fy&&om<fm)) return false;
     }
     if(toKey!=='all'){
       const [ty,tm]=toKey.split('_').map(Number);
-      if(op._y>ty||(op._y===ty&&op._m>tm)) return false;
+      const oy=op._date.getFullYear(), om=op._date.getMonth();
+      if(oy>ty||(oy===ty&&om>tm)) return false;
     }
     return true;
   });
