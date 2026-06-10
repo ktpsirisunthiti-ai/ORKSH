@@ -270,6 +270,12 @@ button,select,input{font-family:inherit;}
         </select>
       </div>
       <div class="ctrl-group">
+        <div class="ctrl-label">แพทย์</div>
+        <select class="fsel" id="histDoctor" onchange="renderHistory()" style="min-width:150px;">
+          <option value="all">ทุกคน</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
         <div class="ctrl-label">ตั้งแต่เดือน</div>
         <select class="fsel" id="histMonthFrom" onchange="renderHistory()" style="min-width:130px;">
           <option value="all">ทุกเดือน</option>
@@ -904,6 +910,7 @@ function renderHistory(){
   const filterVal=document.getElementById('histFilter').value;
   const fromSel=document.getElementById('histMonthFrom');
   const toSel=document.getElementById('histMonthTo');
+  const docSel=document.getElementById('histDoctor');
 
   // collect all ops
   const all=[];
@@ -919,6 +926,13 @@ function renderHistory(){
       all.push({...op,_date:dt,_y:y,_m:m,_w:w,_d:d});
     });
   });
+
+  // build doctor options
+  const doctors=[...new Set(all.map(op=>op.doctor))].sort();
+  const prevDoc=docSel.value;
+  docSel.innerHTML='<option value="all">ทุกคน</option>'+
+    doctors.map(d=>`<option value="${d}">${d}</option>`).join('');
+  if(doctors.includes(prevDoc)) docSel.value=prevDoc;
 
   // build month options sorted
   const months=[...new Set(all.map(op=>`${op._y}_${String(op._m).padStart(2,'0')}`))].sort();
@@ -936,13 +950,14 @@ function renderHistory(){
 
   const fromKey=fromSel.value;
   const toKey=toSel.value;
+  const docFilter=docSel.value;
 
   // filter
   let list=all.filter(op=>{
     const isPast=op._date<today;
     if(filterVal==='upcoming'&&isPast) return false;
     if(filterVal==='past'&&!isPast) return false;
-    const opKey=`${op._y}_${op._m}`;
+    if(docFilter!=='all'&&op.doctor!==docFilter) return false;
     if(fromKey!=='all'){
       const [fy,fm]=fromKey.split('_').map(Number);
       if(op._y<fy||(op._y===fy&&op._m<fm)) return false;
