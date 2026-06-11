@@ -319,8 +319,22 @@ button,select,input{font-family:inherit;}
     <div class="form-row">
       <label class="form-label">ช่วงเวลา</label>
       <div class="time-grid">
-        <div><div style="font-size:.63rem;color:var(--muted);margin-bottom:3px;">เริ่ม</div><select class="fsel" id="fStart" onchange="onTimeChange()"></select></div>
-        <div><div style="font-size:.63rem;color:var(--muted);margin-bottom:3px;">สิ้นสุด</div><select class="fsel" id="fEnd" onchange="onTimeChange()"></select></div>
+        <div>
+          <div style="font-size:.63rem;color:var(--muted);margin-bottom:3px;">เริ่ม</div>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <select class="fsel" id="fStartH" onchange="onTimeChange()" style="min-width:0;flex:1;"></select>
+            <span style="color:var(--muted);font-size:.9rem;">:</span>
+            <select class="fsel" id="fStartM" onchange="onTimeChange()" style="min-width:0;width:70px;"></select>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.63rem;color:var(--muted);margin-bottom:3px;">สิ้นสุด</div>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <select class="fsel" id="fEndH" onchange="onTimeChange()" style="min-width:0;flex:1;"></select>
+            <span style="color:var(--muted);font-size:.9rem;">:</span>
+            <select class="fsel" id="fEndM" onchange="onTimeChange()" style="min-width:0;width:70px;"></select>
+          </div>
+        </div>
       </div>
       <div class="dur-hint" id="durHint"></div>
     </div>
@@ -875,23 +889,39 @@ function setOpVal(val){
 
 function buildTimeSelects(session,defS,defE){
   const st=SESSION_TIMES[session];
-  const startOpts=[],endOpts=[];
-  for(let m=st.start;m<st.end;m+=30)startOpts.push(m);   // start: 08:30–15:30
-  for(let m=st.start+30;m<=st.end;m+=30)endOpts.push(m); // end: 09:00–16:00
-  const fs=document.getElementById('fStart'),fe=document.getElementById('fEnd');
-  fs.innerHTML=startOpts.map(m=>`<option value="${m}">${minToTime(m)}</option>`).join('');
-  fe.innerHTML=endOpts.map(m=>`<option value="${m}">${minToTime(m)}</option>`).join('');
-  fs.value=defS; fe.value=defE;
+  const startHourMin=Math.floor(st.start/60), startHourMax=Math.floor((st.end-15)/60);
+  const endHourMin=Math.floor((st.start+15)/60), endHourMax=Math.floor(st.end/60);
+
+  // build hour options
+  function hourOpts(hMin,hMax){
+    let html='';
+    for(let h=hMin;h<=hMax;h++) html+=`<option value="${h}">${String(h).padStart(2,'0')}</option>`;
+    return html;
+  }
+  const minOpts='<option value="0">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>';
+
+  document.getElementById('fStartH').innerHTML=hourOpts(startHourMin,startHourMax);
+  document.getElementById('fStartM').innerHTML=minOpts;
+  document.getElementById('fEndH').innerHTML=hourOpts(endHourMin,endHourMax);
+  document.getElementById('fEndM').innerHTML=minOpts;
+
+  // set defaults
+  document.getElementById('fStartH').value=Math.floor(defS/60);
+  document.getElementById('fStartM').value=defS%60;
+  document.getElementById('fEndH').value=Math.floor(defE/60);
+  document.getElementById('fEndM').value=defE%60;
 }
+function getStartMin(){ return +document.getElementById('fStartH').value*60 + +document.getElementById('fStartM').value; }
+function getEndMin(){   return +document.getElementById('fEndH').value*60   + +document.getElementById('fEndM').value; }
 function onTimeChange(){
-  const s=+document.getElementById('fStart').value,e=+document.getElementById('fEnd').value;
+  const s=getStartMin(),e=getEndMin();
   const h=document.getElementById('durHint');
-  if(e>s){h.textContent='⏱ '+fmtDur(e-s);h.style.color=DEPT_COLORS[currentUser.dept];}
+  if(e>s){h.textContent='⏱ '+fmtDur(e-s);h.style.color=currentUser?(DEPT_COLORS[currentUser.dept]||'#d2a8ff'):'#d2a8ff';}
   else{h.textContent='⚠ เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม';h.style.color='#f78166';}
   checkConflict();
 }
 function checkConflict(){
-  const s=+document.getElementById('fStart').value,e=+document.getElementById('fEnd').value;
+  const s=getStartMin(),e=getEndMin();
   const doc=document.getElementById('fDoc').value;
   const el=document.getElementById('modalConflict');
   if(e<=s||!doc){el.classList.remove('show');return;}
@@ -1072,7 +1102,7 @@ async function clearAuditLog(){
 }
 
 function saveOp(){
-  const s=+document.getElementById('fStart').value,e=+document.getElementById('fEnd').value;
+  const s=getStartMin(),e=getEndMin();
   if(e<=s){alert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม');return;}
   const opVal=getOpVal();
   if(!opVal){alert('กรุณาระบุชื่อ operation');return;}
