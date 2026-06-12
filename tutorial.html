@@ -3,551 +3,1000 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>คู่มือการใช้งาน OR Schedule · KSH</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<title>OR Schedule KSH · Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#0d1117;
-  --surface:#161b22;
-  --surface2:#21262d;
-  --border:#30363d;
-  --text:#e6edf3;
-  --muted:#7d8590;
-  --blue:#58a6ff;
-  --orange:#f78166;
-  --green:#3fb950;
-  --purple:#d2a8ff;
-  --yellow:#e3b341;
-}
-html{scroll-behavior:smooth;}
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:'IBM Plex Sans Thai',system-ui,sans-serif;
-  line-height:1.6;
+  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--border2:#3d4550;
+  --text:#e6edf3;--muted:#7d8590;--muted2:#9198a1;
+  --blue:#58a6ff;--green:#3fb950;--orange:#f78166;--yellow:#e3b341;--purple:#d2a8ff;
+  --font:'IBM Plex Sans Thai',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',monospace;
 }
 
-/* ── HERO ── */
-.hero{
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:40px 24px;
-  position:relative;
-  overflow:hidden;
-}
-.hero-bg{
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(88,166,255,.08) 0%, transparent 70%),
-             radial-gradient(ellipse 60% 40% at 80% 100%, rgba(63,185,80,.06) 0%, transparent 60%);
-  pointer-events:none;
-}
-.hero-label{
-  font-size:.72rem;font-weight:700;
-  color:var(--blue);
-  text-transform:uppercase;letter-spacing:.15em;
-  margin-bottom:16px;
-}
-.hero h1{
-  font-size:clamp(2rem,6vw,3.5rem);
-  font-weight:700;
-  letter-spacing:-.03em;
-  line-height:1.1;
-  margin-bottom:16px;
-}
-.hero h1 span{color:var(--blue);}
-.hero-sub{
-  font-size:1.05rem;color:var(--muted);
-  max-width:480px;margin-bottom:40px;
-  line-height:1.7;
-}
-.feature-pills{
-  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:48px;
-}
-.feature-pill{
-  padding:6px 16px;border-radius:20px;font-size:.82rem;font-weight:600;
-  border:1px solid;
-}
-.pill-blue{border-color:var(--blue);color:var(--blue);background:rgba(88,166,255,.08);}
-.pill-green{border-color:var(--green);color:var(--green);background:rgba(63,185,80,.08);}
-.pill-purple{border-color:var(--purple);color:var(--purple);background:rgba(210,168,255,.08);}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden;}
 
-.scroll-hint{
-  display:flex;flex-direction:column;align-items:center;gap:6px;
-  color:var(--muted);font-size:.78rem;
-  animation:bounce 2s infinite;
-}
-@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(6px);}}
-.scroll-arrow{font-size:1.2rem;}
+/* ── PROGRESS BAR ── */
+.progress-bar{position:fixed;top:0;left:0;right:0;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .5s ease;}
 
-/* ── SECTION ── */
-.section{
-  max-width:900px;margin:0 auto;
-  padding:80px 24px;
-}
-.section-number{
-  font-size:.68rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:.12em;
-  margin-bottom:8px;
-}
-.section h2{
-  font-size:clamp(1.6rem,4vw,2.4rem);
-  font-weight:700;letter-spacing:-.02em;
-  margin-bottom:12px;line-height:1.2;
-}
-.section-desc{
-  font-size:1rem;color:var(--muted);
-  max-width:540px;margin-bottom:40px;line-height:1.7;
-}
+/* ── NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;z-index:90;background:rgba(13,17,23,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);}
+.nav-logo{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);}
+.nav-scene{font-size:.75rem;color:var(--muted);font-family:var(--mono);}
+.nav-dots{display:flex;gap:6px;}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);border:none;cursor:pointer;transition:all .2s;}
+.nav-dot.active{background:var(--blue);transform:scale(1.3);}
+.nav-dot.done{background:var(--green);}
 
-/* ── STEP CARDS ── */
-.steps{display:flex;flex-direction:column;gap:16px;}
-.step{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:20px 24px;
-  display:flex;gap:20px;align-items:flex-start;
-  transition:border-color .2s, transform .2s;
-}
-.step:hover{border-color:var(--blue);transform:translateX(4px);}
-.step-num{
-  flex-shrink:0;
-  width:36px;height:36px;
-  border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:.85rem;font-weight:700;
-  font-family:'IBM Plex Mono',monospace;
-}
-.step-body h3{font-size:.95rem;font-weight:700;margin-bottom:4px;}
-.step-body p{font-size:.85rem;color:var(--muted);line-height:1.6;}
-.step-body .tag{
-  display:inline-block;
-  padding:2px 8px;border-radius:4px;
-  font-size:.72rem;font-weight:600;
-  margin-top:8px;
-}
+/* ── SLIDE ENGINE ── */
+.slides{width:100%;height:100%;position:relative;}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px 100px;opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease;transform:translateY(20px);}
+.slide.active{opacity:1;pointer-events:all;transform:translateY(0);}
+.slide.exit{opacity:0;transform:translateY(-20px);}
 
-/* ── DEMO MOCKUP ── */
-.mockup{
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:12px;
-  overflow:hidden;
-  margin-bottom:40px;
-}
-.mockup-bar{
-  background:var(--surface2);
-  border-bottom:1px solid var(--border);
-  padding:10px 16px;
-  display:flex;align-items:center;gap:8px;
-}
-.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.mockup-title{font-size:.75rem;color:var(--muted);margin-left:8px;font-family:'IBM Plex Mono',monospace;}
-.mockup-body{padding:16px;}
+/* ── FOOTER NAV ── */
+.footer{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:rgba(13,17,23,.92);backdrop-filter:blur(8px);border-top:1px solid var(--border);z-index:90;}
+.footer-step{font-size:.72rem;color:var(--muted);}
+.nav-btns{display:flex;gap:8px;}
+.btn-nav{padding:8px 20px;border-radius:7px;font-family:var(--font);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid var(--border2);background:transparent;color:var(--muted2);}
+.btn-nav:hover{background:var(--surface2);color:var(--text);}
+.btn-nav.primary{background:var(--blue);color:#0d1117;border-color:var(--blue);}
+.btn-nav.primary:hover{opacity:.85;}
+.btn-nav:disabled{opacity:.35;cursor:not-allowed;}
 
-/* ── MODAL DEMO ── */
-.modal-demo{
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:10px;
-  padding:16px;
-  max-width:320px;
-  margin:0 auto;
-}
-.modal-row{margin-bottom:10px;}
-.modal-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
-.modal-field{
-  width:100%;background:var(--bg);border:1px solid var(--border);
-  color:var(--text);padding:7px 10px;border-radius:6px;
-  font-size:.82rem;font-family:inherit;
-}
-.modal-time-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.modal-btn-row{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
-.mbtn{padding:7px 14px;border-radius:6px;font-size:.82rem;cursor:pointer;border:none;font-family:inherit;}
-.mbtn-primary{background:var(--blue);color:#0d1117;font-weight:700;}
-.mbtn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
-.mbtn-red{background:rgba(247,129,102,.15);color:var(--orange);margin-right:auto;}
+/* ── SCENE LAYOUT ── */
+.scene-tag{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;padding:3px 10px;border-radius:20px;margin-bottom:16px;display:inline-block;}
+.scene-title{font-size:2rem;font-weight:700;text-align:center;line-height:1.3;margin-bottom:10px;}
+.scene-sub{font-size:.95rem;color:var(--muted2);text-align:center;max-width:500px;line-height:1.6;margin-bottom:36px;}
 
-/* ── HISTORY DEMO ── */
-.hist-item{
-  border-left:3px solid;
-  padding:10px 14px;
-  border-radius:0 8px 8px 0;
-  margin-bottom:8px;
-  background:var(--surface2);
-}
-.hist-date{font-size:.7rem;color:var(--muted);margin-bottom:2px;font-family:'IBM Plex Mono',monospace;}
-.hist-doc{font-size:.78rem;font-weight:700;margin-bottom:1px;}
-.hist-op{font-size:.85rem;font-weight:600;}
-.hist-time{font-size:.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
-.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
-.filter-sel{
-  background:var(--bg);border:1px solid var(--border);color:var(--text);
-  padding:5px 10px;border-radius:6px;font-size:.78rem;font-family:inherit;
-}
+/* ── MOCK APP SHELL ── */
+.mock-shell{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;width:100%;max-width:680px;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.mock-topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);}
+.mock-badge{font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:20px;}
+.mock-tabs{display:flex;border-bottom:1px solid var(--border);}
+.mock-tab{padding:9px 16px;font-size:.8rem;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:default;}
+.mock-tab.active{color:var(--text);border-bottom-color:var(--blue);}
+.mock-body{padding:16px;}
 
-/* ── CENTRAL DEMO ── */
-.room-demo{
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:8px;margin-bottom:8px;overflow:hidden;
-}
-.room-header{
-  background:var(--bg);padding:7px 12px;
-  font-size:.82rem;font-weight:700;border-bottom:1px solid var(--border);
-}
-.room-sessions{display:grid;grid-template-columns:1fr 1fr;}
-.room-session{padding:10px 12px;border-right:1px solid var(--border);}
-.room-session:last-child{border-right:none;}
-.sess-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-.sess-op{
-  border-left:3px solid;border-radius:0 5px 5px 0;
-  padding:4px 8px;margin-bottom:4px;font-size:.72rem;
-}
-.sess-op-doc{font-weight:700;}
-.sess-op-name{color:var(--muted);}
-.sess-empty{font-size:.72rem;color:var(--border);font-style:italic;}
+/* ── SLOT CARD ── */
+.mock-slot{background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;}
+.mock-slot-header{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.mock-room{font-size:.82rem;font-weight:700;}
+.mock-time{font-size:.68rem;color:var(--muted);font-family:var(--mono);}
+.mock-slot-body{padding:10px 12px;}
+.mock-op{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface);border-radius:6px;margin-bottom:6px;border-left:3px solid;}
+.mock-op-doc{font-size:.72rem;font-weight:700;}
+.mock-op-name{font-size:.82rem;font-weight:600;}
+.mock-op-meta{font-size:.65rem;color:var(--muted);font-family:var(--mono);}
+.mock-add-btn{width:100%;padding:7px;border:1px dashed var(--border2);border-radius:6px;background:transparent;color:var(--muted);font-family:var(--font);font-size:.78rem;text-align:center;cursor:default;}
 
-/* ── DIVIDER ── */
-.section-divider{
-  border:none;border-top:1px solid var(--border);
-  margin:0;
-}
+/* ── MODAL ── */
+.mock-modal-wrap{position:relative;margin-top:10px;}
+.mock-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);border-radius:8px;display:flex;align-items:center;justify-content:center;z-index:5;}
+.mock-modal{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:18px;width:300px;}
+.mock-modal-title{font-size:.88rem;font-weight:700;margin-bottom:14px;}
+.mock-form-label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;display:block;}
+.mock-fsel{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:6px;font-size:.78rem;margin-bottom:10px;font-family:var(--font);}
+.mock-finput{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:7px 10px;border-radius:6px;font-size:.78rem;margin-bottom:10px;font-family:var(--font);}
+.mock-time-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.mock-time-label{font-size:.6rem;color:var(--muted);margin-bottom:3px;}
+.mock-time-sel{display:flex;gap:4px;}
+.mock-time-sel select{flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:6px 4px;border-radius:5px;font-size:.72rem;font-family:var(--font);}
+.mock-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:14px;}
+.mock-btn-cancel{padding:7px 12px;border:1px solid var(--border2);border-radius:6px;background:transparent;color:var(--muted2);font-size:.78rem;font-family:var(--font);}
+.mock-btn-save{padding:7px 14px;border:none;border-radius:6px;background:var(--blue);color:#0d1117;font-weight:700;font-size:.78rem;font-family:var(--font);}
+.mock-btn-del{padding:7px 12px;border:none;border-radius:6px;background:rgba(247,129,102,.15);color:#f78166;font-size:.78rem;font-family:var(--font);margin-right:auto;}
 
-/* ── FOOTER ── */
-.footer{
-  text-align:center;padding:60px 24px;
-  color:var(--muted);font-size:.82rem;
-  border-top:1px solid var(--border);
-}
-.footer strong{color:var(--text);}
+/* ── HISTORY MOCK ── */
+.mock-hist-filter{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.mock-hist-fsel{background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.75rem;font-family:var(--font);}
+.mock-hist-list{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+.mock-hist-item{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.mock-hist-item:last-child{border-bottom:none;}
+.mock-hist-date{font-size:.7rem;font-weight:700;min-width:80px;}
+.mock-hist-info{flex:1;border-left:3px solid;padding-left:8px;}
+.mock-hist-doc{font-size:.75rem;font-weight:700;}
+.mock-hist-op{font-size:.82rem;font-weight:600;}
+.mock-hist-meta{font-size:.65rem;color:var(--muted);}
 
-/* ── ANIMATIONS ── */
-.fade-in{opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
-.fade-in.visible{opacity:1;transform:none;}
+/* ── CENTRAL MOCK ── */
+.mock-central-grid{display:flex;flex-direction:column;gap:8px;}
+.mock-cv-room{background:var(--bg);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
+.mock-cv-header{padding:7px 12px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;}
+.mock-cv-sessions{display:grid;grid-template-columns:1fr 1fr;}
+.mock-cv-sess{padding:8px 10px;border-right:1px solid var(--border);}
+.mock-cv-sess:last-child{border-right:none;}
+.mock-cv-label{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.mock-cv-op{padding:4px 7px;border-radius:4px;margin-bottom:3px;border-left:3px solid;}
+.mock-cv-doc{font-size:.7rem;font-weight:700;}
+.mock-cv-name{font-size:.72rem;color:var(--muted2);}
+.mock-cv-empty{font-size:.68rem;color:var(--border2);font-style:italic;}
+
+/* ── STEP INDICATOR ── */
+.step-flow{display:flex;align-items:center;gap:0;margin-bottom:28px;flex-wrap:wrap;justify-content:center;}
+.step-node{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:.78rem;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--muted);transition:all .3s;}
+.step-node.active-step{background:rgba(88,166,255,.12);border-color:var(--blue);color:var(--blue);}
+.step-node.done-step{background:rgba(63,185,80,.1);border-color:var(--green);color:var(--green);}
+.step-arrow{font-size:.9rem;color:var(--border2);margin:0 4px;}
+
+/* ── HIGHLIGHT POINTER ── */
+.pointer{display:inline-block;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.2);opacity:.7;}}
+
+/* ── CALLOUT BOX ── */
+.callout{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.3);border-radius:8px;padding:12px 16px;font-size:.82rem;color:var(--muted2);line-height:1.6;max-width:620px;text-align:left;margin-top:16px;}
+.callout strong{color:var(--text);}
+.callout.warn{background:rgba(227,179,65,.08);border-color:rgba(227,179,65,.3);color:var(--yellow);}
+.callout.green{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.3);color:var(--green);}
+
+/* ── STEP SUB-NAV ── */
+.sub-nav{display:flex;gap:6px;margin-bottom:20px;}
+.sub-dot{width:28px;height:4px;border-radius:2px;background:var(--border2);transition:all .3s;cursor:pointer;}
+.sub-dot.active{background:var(--blue);width:40px;}
+.sub-dot.done{background:var(--green);}
+
+/* ── INTRO SCENE ── */
+.intro-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:620px;width:100%;margin-bottom:20px;}
+.intro-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center;transition:all .3s;}
+.intro-card:hover{border-color:var(--blue);background:rgba(88,166,255,.06);}
+.intro-card-icon{font-size:1.8rem;margin-bottom:8px;}
+.intro-card-title{font-size:.85rem;font-weight:700;margin-bottom:4px;}
+.intro-card-sub{font-size:.72rem;color:var(--muted);line-height:1.5;}
+
+/* ── ANIM CLASSES ── */
+.fade-in{animation:fadeIn .4s ease forwards;}
+.slide-up{animation:slideUp .4s ease forwards;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.delay-1{animation-delay:.1s;opacity:0;}
+.delay-2{animation-delay:.2s;opacity:0;}
+.delay-3{animation-delay:.3s;opacity:0;}
+.delay-4{animation-delay:.4s;opacity:0;}
+.delay-5{animation-delay:.5s;opacity:0;}
+
+/* ── BADGE HIGHLIGHT ── */
+.highlight-ring{box-shadow:0 0 0 3px var(--blue),0 0 12px rgba(88,166,255,.4);}
+.highlight-ring-green{box-shadow:0 0 0 3px var(--green),0 0 12px rgba(63,185,80,.4);}
+.highlight-ring-orange{box-shadow:0 0 0 3px var(--orange),0 0 12px rgba(247,129,102,.4);}
+
+/* kbd */
+kbd{background:var(--surface2);border:1px solid var(--border2);border-radius:4px;padding:2px 6px;font-family:var(--mono);font-size:.75rem;color:var(--text);}
+
+/* scrollable body if needed */
+.slide-scroll{overflow-y:auto;max-height:calc(100vh - 160px);width:100%;display:flex;flex-direction:column;align-items:center;}
 </style>
 </head>
 <body>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-label">🏥 KSH · OR Schedule</div>
-  <h1>คู่มือการใช้งาน<br><span>ระบบ OR Elective Schedule</span></h1>
-  <p class="hero-sub">เรียนรู้การใช้งาน 3 feature หลักของระบบจองห้องผ่าตัดออนไลน์ สำหรับแพทย์และเจ้าหน้าที่</p>
-  <div class="feature-pills">
-    <a href="#feature1" class="feature-pill pill-blue">📋 การ Set ผ่าตัด</a>
-    <a href="#feature2" class="feature-pill pill-green">📜 ประวัติของฉัน</a>
-    <a href="#feature3" class="feature-pill pill-purple">🏥 ตารางรวม</a>
+<!-- PROGRESS -->
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-logo">🏥 OR KSH · Tutorial</div>
+  <div class="nav-scene" id="navScene">บทเรียนที่ 1 จาก 4</div>
+  <div class="nav-dots">
+    <button class="nav-dot active" id="dot0" onclick="goSlide(0)" title="บทนำ"></button>
+    <button class="nav-dot" id="dot1" onclick="goSlide(1)" title="Scene 1: นัดผ่าตัด"></button>
+    <button class="nav-dot" id="dot2" onclick="goSlide(2)" title="Scene 2: ประวัติ"></button>
+    <button class="nav-dot" id="dot3" onclick="goSlide(3)" title="Scene 3: ตารางรวม"></button>
   </div>
-  <div class="scroll-hint">
-    <span>เลื่อนเพื่อดูคู่มือ</span>
-    <span class="scroll-arrow">↓</span>
-  </div>
-</section>
+</div>
 
-<hr class="section-divider">
+<!-- SLIDES -->
+<div class="slides">
 
-<!-- FEATURE 1: SET OPERATION -->
-<section class="section fade-in" id="feature1">
-  <div class="section-number" style="color:var(--blue);">Feature 01</div>
-  <h2 style="color:var(--blue);">การ Set ผ่าตัด<br>แก้ไข และลบ</h2>
-  <p class="section-desc">เลือกวันที่มี OR slot ของคุณ แล้วเพิ่ม operation ได้ทันที พร้อมระบุแพทย์ diagnosis เวลา และ remark</p>
+  <!-- ─────────────── SLIDE 0: INTRO ─────────────── -->
+  <div class="slide active" id="slide0">
+    <div class="slide-scroll">
+      <div class="scene-tag fade-in" style="background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.3);">🏥 OR Schedule KSH</div>
+      <h1 class="scene-title fade-in delay-1">คู่มือการใช้งาน<br>ระบบนัดผ่าตัด</h1>
+      <p class="scene-sub fade-in delay-2">เรียนรู้วิธีใช้งานครบทุกฟีเจอร์ใน 3 บทเรียน<br>กด <strong>ถัดไป</strong> เพื่อเริ่มต้น</p>
 
-  <!-- Mockup -->
-  <div class="mockup fade-in">
-    <div class="mockup-bar">
-      <div class="dot" style="background:#f78166;"></div>
-      <div class="dot" style="background:#e3b341;"></div>
-      <div class="dot" style="background:#3fb950;"></div>
-      <span class="mockup-title">เพิ่ม Operation — OR-3 · พุธ เช้า</span>
-    </div>
-    <div class="mockup-body">
-      <div class="modal-demo">
-        <div class="modal-row">
-          <div class="modal-label">แพทย์</div>
-          <select class="modal-field">
-            <option>พญ.ระพีพรรณ</option>
-            <option>นพ.เกียรติพร</option>
-            <option>พญ.อารีรัตน์</option>
-          </select>
+      <div class="intro-cards">
+        <div class="intro-card fade-in delay-2" onclick="goSlide(1)" style="cursor:pointer;">
+          <div class="intro-card-icon">📋</div>
+          <div class="intro-card-title">บทที่ 1</div>
+          <div class="intro-card-sub">นัดผ่าตัด แก้ไข และลบ operation</div>
         </div>
-        <div class="modal-row">
-          <div class="modal-label">Diagnosis</div>
-          <input class="modal-field" type="text" placeholder="เช่น Previous C/S, Myoma" value="G2P1 38+5 wk CPD">
+        <div class="intro-card fade-in delay-3" onclick="goSlide(2)" style="cursor:pointer;">
+          <div class="intro-card-icon">📜</div>
+          <div class="intro-card-title">บทที่ 2</div>
+          <div class="intro-card-sub">ดูประวัติของฉัน กรองตามเดือน</div>
         </div>
-        <div class="modal-row">
-          <div class="modal-label">Operation</div>
-          <select class="modal-field">
-            <option>Cesarean section</option>
-          </select>
+        <div class="intro-card fade-in delay-4" onclick="goSlide(3)" style="cursor:pointer;">
+          <div class="intro-card-icon">🏥</div>
+          <div class="intro-card-title">บทที่ 3</div>
+          <div class="intro-card-sub">ตารางรวม ภาพรวมทุกห้องผ่าตัด</div>
         </div>
-        <div class="modal-row">
-          <div class="modal-label">ช่วงเวลา</div>
-          <div class="modal-time-row">
-            <select class="modal-field"><option>09</option><option selected>10</option><option>11</option></select>
-            <select class="modal-field"><option selected>00</option><option>15</option><option>30</option><option>45</option></select>
-          </div>
-          <div style="font-size:.7rem;color:var(--purple);margin-top:4px;font-family:monospace;">⏱ 1ชม.30น.</div>
-        </div>
-        <div class="modal-row">
-          <div class="modal-label">Remark (ถ้ามี)</div>
-          <input class="modal-field" type="text" placeholder="หมายเหตุ..." value="">
-        </div>
-        <div class="modal-btn-row">
-          <button class="mbtn mbtn-red">ลบ</button>
-          <button class="mbtn mbtn-ghost">ยกเลิก</button>
-          <button class="mbtn mbtn-primary">บันทึก</button>
-        </div>
+      </div>
+
+      <div class="callout fade-in delay-5">
+        <strong>ระบบนี้ใช้สำหรับ:</strong> นัดหมาย Operation แบบ Elective ล่วงหน้า ใช้งานร่วมกันหลายแพทย์ บันทึกข้อมูลแบบ Real-time ผ่าน Firebase
       </div>
     </div>
   </div>
 
-  <div class="steps">
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(88,166,255,.15);color:var(--blue);">1</div>
-      <div class="step-body">
-        <h3>เลือกวันที่มี OR slot</h3>
-        <p>กดปุ่มวันในแถบด้านบน ระบบจะแสดงเฉพาะ slot ของคุณตามที่ได้รับมอบหมาย เช่น OR-3 พุธเช้า</p>
-        <span class="tag" style="background:rgba(88,166,255,.1);color:var(--blue);">📋 ตารางของฉัน</span>
-      </div>
-    </div>
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(88,166,255,.15);color:var(--blue);">2</div>
-      <div class="step-body">
-        <h3>กด "+ เพิ่ม operation"</h3>
-        <p>กรอก Diagnosis, เลือก Operation, ตั้งเวลา (ชั่วโมง:นาที — เลือกได้ 00, 15, 30, 45) และ Remark ถ้ามี</p>
-        <span class="tag" style="background:rgba(63,185,80,.1);color:var(--green);">✓ บันทึกอัตโนมัติขึ้น Firebase</span>
-      </div>
-    </div>
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(88,166,255,.15);color:var(--blue);">3</div>
-      <div class="step-body">
-        <h3>แก้ไขหรือลบ</h3>
-        <p>กดที่การ์ด operation ใดก็ได้เพื่อเปิด modal แก้ไข กดปุ่ม "ลบ" สีแดงเพื่อลบออก ระบบ sync ทุกเครื่องทันที</p>
-        <span class="tag" style="background:rgba(247,129,102,.1);color:var(--orange);">⚠ ระบบจะแจ้งเตือนถ้าเวลาซ้อนทับกัน</span>
-      </div>
-    </div>
-  </div>
-</section>
+  <!-- ─────────────── SLIDE 1: นัดผ่าตัด ─────────────── -->
+  <div class="slide" id="slide1">
+    <div class="slide-scroll">
+      <div class="scene-tag" style="background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.3);">📋 บทที่ 1</div>
+      <h2 class="scene-title">นัดผ่าตัด · แก้ไข · ลบ</h2>
 
-<hr class="section-divider">
+      <!-- sub-step dots -->
+      <div class="sub-nav" id="s1SubNav">
+        <div class="sub-dot active" onclick="s1Step(0)"></div>
+        <div class="sub-dot" onclick="s1Step(1)"></div>
+        <div class="sub-dot" onclick="s1Step(2)"></div>
+      </div>
 
-<!-- FEATURE 2: HISTORY -->
-<section class="section fade-in" id="feature2">
-  <div class="section-number" style="color:var(--green);">Feature 02</div>
-  <h2 style="color:var(--green);">ประวัติของฉัน</h2>
-  <p class="section-desc">ดูรายการผ่าตัดทั้งหมดของคุณ — ที่ผ่านมาแล้ว วันนี้ และที่กำลังจะมาถึง กรองตามแพทย์และช่วงเดือนได้</p>
+      <!-- Step flow -->
+      <div class="step-flow" id="s1StepFlow">
+        <div class="step-node active-step" id="s1n0">① เลือกวัน</div>
+        <div class="step-arrow">›</div>
+        <div class="step-node" id="s1n1">② กรอก Operation</div>
+        <div class="step-arrow">›</div>
+        <div class="step-node" id="s1n2">③ บันทึก / แก้ไข / ลบ</div>
+      </div>
 
-  <div class="mockup fade-in">
-    <div class="mockup-bar">
-      <div class="dot" style="background:#f78166;"></div>
-      <div class="dot" style="background:#e3b341;"></div>
-      <div class="dot" style="background:#3fb950;"></div>
-      <span class="mockup-title">📜 ประวัติของฉัน</span>
-    </div>
-    <div class="mockup-body">
-      <!-- Filters -->
-      <div class="filter-row">
-        <select class="filter-sel"><option>🔜 กำลังจะมาถึง</option></select>
-        <select class="filter-sel"><option>พญ.อารีรัตน์</option></select>
-        <select class="filter-sel"><option>มิ.ย. 2569</option></select>
-        <select class="filter-sel"><option>ก.ค. 2569</option></select>
-      </div>
-      <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">3 รายการ</div>
-      <!-- Items -->
-      <div class="hist-item" style="border-color:var(--orange);">
-        <div class="hist-date">📍 วันนี้ · พุธ · ☀ เช้า · OR-3</div>
-        <div class="hist-doc" style="color:var(--orange);">พญ.อารีรัตน์</div>
-        <div class="hist-op">Cesarean section</div>
-        <div class="hist-time">10:00–11:30 · 1ชม.30น.</div>
-      </div>
-      <div class="hist-item" style="border-color:var(--orange);">
-        <div class="hist-date">🔜 15 มิ.ย. 2569 · จันทร์ · 🌤 บ่าย · OR-1</div>
-        <div class="hist-doc" style="color:var(--orange);">พญ.อารีรัตน์</div>
-        <div class="hist-op">Ovarian cystectomy</div>
-        <div class="hist-time">13:00–14:00 · 1ชม.</div>
-      </div>
-      <div class="hist-item" style="border-color:var(--orange);">
-        <div class="hist-date">🔜 2 ก.ค. 2569 · พฤหัสบดี · ☀ เช้า · OR-3</div>
-        <div class="hist-doc" style="color:var(--orange);">พญ.อารีรัตน์</div>
-        <div class="hist-op">Hysterectomy</div>
-        <div class="hist-time">09:30–12:00 · 2ชม.30น.</div>
-      </div>
+      <!-- Content area -->
+      <div id="s1Content" style="width:100%;max-width:680px;"></div>
     </div>
   </div>
 
-  <div class="steps">
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(63,185,80,.15);color:var(--green);">1</div>
-      <div class="step-body">
-        <h3>เปิดแท็บ "📜 ประวัติของฉัน"</h3>
-        <p>ระบบจะดึงรายการผ่าตัดทั้งหมดของคุณจาก Firebase แสดงพร้อมไอคอนสถานะ 📍 วันนี้ · 🔜 กำลังจะมาถึง · ✅ ผ่านแล้ว</p>
-      </div>
-    </div>
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(63,185,80,.15);color:var(--green);">2</div>
-      <div class="step-body">
-        <h3>กรองข้อมูลตามต้องการ</h3>
-        <p>เลือก "แสดง" เพื่อดูเฉพาะกำลังจะมาถึงหรือผ่านมาแล้ว เลือก "แพทย์" และกำหนดช่วงเดือนได้อิสระ</p>
-        <span class="tag" style="background:rgba(63,185,80,.1);color:var(--green);">เช่น มิ.ย. 2569 → ส.ค. 2569</span>
-      </div>
-    </div>
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(63,185,80,.15);color:var(--green);">3</div>
-      <div class="step-body">
-        <h3>กดรายการเพื่อไปวันนั้นทันที</h3>
-        <p>กดที่ operation ใดก็ได้ ระบบจะกระโดดไปยังวันนั้นในแท็บ "ตารางของฉัน" โดยอัตโนมัติ</p>
-      </div>
-    </div>
-  </div>
-</section>
+  <!-- ─────────────── SLIDE 2: ประวัติ ─────────────── -->
+  <div class="slide" id="slide2">
+    <div class="slide-scroll">
+      <div class="scene-tag" style="background:rgba(63,185,80,.1);color:var(--green);border:1px solid rgba(63,185,80,.3);">📜 บทที่ 2</div>
+      <h2 class="scene-title">ประวัติของฉัน</h2>
 
-<hr class="section-divider">
+      <div class="sub-nav" id="s2SubNav">
+        <div class="sub-dot active" onclick="s2Step(0)"></div>
+        <div class="sub-dot" onclick="s2Step(1)"></div>
+        <div class="sub-dot" onclick="s2Step(2)"></div>
+      </div>
 
-<!-- FEATURE 3: CENTRAL VIEW -->
-<section class="section fade-in" id="feature3">
-  <div class="section-number" style="color:var(--purple);">Feature 03</div>
-  <h2 style="color:var(--purple);">ตารางรวม</h2>
-  <p class="section-desc">ดูภาพรวมการใช้ห้องผ่าตัดทุกห้อง ทุกแผนก ทุกแพทย์ ในวันที่เลือก แยกเช้า-บ่าย ชัดเจน</p>
-
-  <div class="mockup fade-in">
-    <div class="mockup-bar">
-      <div class="dot" style="background:#f78166;"></div>
-      <div class="dot" style="background:#e3b341;"></div>
-      <div class="dot" style="background:#3fb950;"></div>
-      <span class="mockup-title">🏥 ตารางรวม · พุธ 11 มิ.ย. 2569</span>
-    </div>
-    <div class="mockup-body">
-      <div class="room-demo">
-        <div class="room-header">OR-1</div>
-        <div class="room-sessions">
-          <div class="room-session">
-            <div class="sess-label">☀ เช้า 08:30–12:00</div>
-            <div class="sess-op" style="border-color:var(--blue);background:rgba(88,166,255,.1);">
-              <div class="sess-op-doc" style="color:var(--blue);">นพ.สมชาย ว.</div>
-              <div class="sess-op-name">Cholecystectomy</div>
-              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">09:00–11:00</div>
-            </div>
-          </div>
-          <div class="room-session">
-            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
-            <div class="sess-empty">ว่าง</div>
-          </div>
-        </div>
-      </div>
-      <div class="room-demo">
-        <div class="room-header">OR-2</div>
-        <div class="room-sessions">
-          <div class="room-session">
-            <div class="sess-label">☀ เช้า 08:30–12:00</div>
-            <div class="sess-op" style="border-color:var(--orange);background:rgba(247,129,102,.1);">
-              <div class="sess-op-doc" style="color:var(--orange);">พญ.ระพีพรรณ</div>
-              <div class="sess-op-name">Cesarean section</div>
-              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">10:00–11:30</div>
-            </div>
-          </div>
-          <div class="room-session">
-            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
-            <div class="sess-op" style="border-color:var(--orange);background:rgba(247,129,102,.1);">
-              <div class="sess-op-doc" style="color:var(--orange);">นพ.เกียรติพร</div>
-              <div class="sess-op-name">Hysterectomy</div>
-              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">13:00–15:30</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="room-demo">
-        <div class="room-header">OR-3</div>
-        <div class="room-sessions">
-          <div class="room-session">
-            <div class="sess-label">☀ เช้า 08:30–12:00</div>
-            <div class="sess-op" style="border-color:var(--green);background:rgba(63,185,80,.1);">
-              <div class="sess-op-doc" style="color:var(--green);">นพ.ภัทรพล</div>
-              <div class="sess-op-name">ORIF femur</div>
-              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">08:30–11:00</div>
-            </div>
-          </div>
-          <div class="room-session">
-            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
-            <div class="sess-empty">ว่าง</div>
-          </div>
-        </div>
-      </div>
-      <div class="room-demo">
-        <div class="room-header">OR-4</div>
-        <div class="room-sessions">
-          <div class="room-session">
-            <div class="sess-label">☀ เช้า 08:30–12:00</div>
-            <div class="sess-op" style="border-color:var(--yellow);background:rgba(227,179,65,.1);">
-              <div class="sess-op-doc" style="color:var(--yellow);">พญ.ชัชฎาภรณ์</div>
-              <div class="sess-op-name">PE + IOL</div>
-              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">09:00–10:00</div>
-            </div>
-          </div>
-          <div class="room-session">
-            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
-            <div class="sess-op" style="border-color:var(--yellow);background:rgba(227,179,65,.1);">
-              <div class="sess-op-doc" style="color:var(--yellow);">พญ.ณัฐนรี</div>
-              <div class="sess-op-name">Ptx</div>
-              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">13:30–14:30</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="s2Content" style="width:100%;max-width:680px;"></div>
     </div>
   </div>
 
-  <div class="steps">
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(210,168,255,.15);color:var(--purple);">1</div>
-      <div class="step-body">
-        <h3>เปิดแท็บ "🏥 ตารางรวม"</h3>
-        <p>ระบบดึงข้อมูลจากทุกแผนกมาแสดงพร้อมกัน เห็น OR-1 ถึง OR-4 ครบในหน้าเดียว</p>
+  <!-- ─────────────── SLIDE 3: ตารางรวม ─────────────── -->
+  <div class="slide" id="slide3">
+    <div class="slide-scroll">
+      <div class="scene-tag" style="background:rgba(210,168,255,.1);color:var(--purple);border:1px solid rgba(210,168,255,.3);">🏥 บทที่ 3</div>
+      <h2 class="scene-title">ตารางรวม</h2>
+
+      <div class="sub-nav" id="s3SubNav">
+        <div class="sub-dot active" onclick="s3Step(0)"></div>
+        <div class="sub-dot" onclick="s3Step(1)"></div>
       </div>
-    </div>
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(210,168,255,.15);color:var(--purple);">2</div>
-      <div class="step-body">
-        <h3>เลือกเดือน สัปดาห์ และวัน</h3>
-        <p>นำทางด้วยปุ่มเดือน สัปดาห์ และวันเหมือนกับหน้าตารางของฉัน ข้อมูลอัปเดตทุก 8 วินาที</p>
-        <span class="tag" style="background:rgba(210,168,255,.1);color:var(--purple);">● เชื่อมต่อแล้ว · sync อัตโนมัติ</span>
-      </div>
-    </div>
-    <div class="step fade-in">
-      <div class="step-num" style="background:rgba(210,168,255,.15);color:var(--purple);">3</div>
-      <div class="step-body">
-        <h3>สีแยกตามแผนก</h3>
-        <p>🔵 ศัลยกรรม · 🟠 สูตินรีเวช · 🟢 ออร์โธปีดิกส์ · 🟡 จักษุ · 🟣 ศัลย์ประสาท · 🔷 Maxillo ดูได้ทันทีว่าห้องไหนว่างหรือเต็ม</p>
-      </div>
+
+      <div id="s3Content" style="width:100%;max-width:680px;"></div>
     </div>
   </div>
-</section>
 
-<hr class="section-divider">
+</div>
 
-<footer class="footer">
-  <p style="margin-bottom:8px;font-size:1rem;"><strong>OR Elective Schedule · KSH</strong></p>
-  <p>ข้อมูลเก็บใน Firebase Realtime Database · sync ทุกเครื่องอัตโนมัติ</p>
-  <p style="margin-top:8px;">สอบถามการใช้งานเพิ่มเติมติดต่อผู้ดูแลระบบ</p>
-</footer>
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-step" id="footerStep">บทที่ 1 จาก 4</div>
+  <div class="nav-btns">
+    <button class="btn-nav" id="btnBack" onclick="navBack()" disabled>‹ ย้อนกลับ</button>
+    <button class="btn-nav primary" id="btnNext" onclick="navNext()">ถัดไป ›</button>
+  </div>
+</div>
 
 <script>
-// Scroll-triggered fade in
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-    }
-  });
-}, { threshold: 0.1 });
+// ── STATE ──
+let currentSlide = 0;
+let s1CurrentStep = 0;
+let s2CurrentStep = 0;
+let s3CurrentStep = 0;
+const TOTAL_SLIDES = 4;
 
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+// ── SLIDE NAV ──
+function goSlide(n) {
+  const cur = document.getElementById('slide' + currentSlide);
+  cur.classList.remove('active');
+  cur.classList.add('exit');
+  setTimeout(() => cur.classList.remove('exit'), 500);
+
+  currentSlide = n;
+  const next = document.getElementById('slide' + n);
+  next.classList.add('active');
+
+  // update dots
+  for (let i = 0; i < TOTAL_SLIDES; i++) {
+    const d = document.getElementById('dot' + i);
+    d.classList.remove('active', 'done');
+    if (i < n) d.classList.add('done');
+    else if (i === n) d.classList.add('active');
+  }
+
+  // progress
+  document.getElementById('progressFill').style.width = ((n / (TOTAL_SLIDES - 1)) * 100) + '%';
+  document.getElementById('navScene').textContent = 'บทเรียนที่ ' + (n + 1) + ' จาก ' + TOTAL_SLIDES;
+  document.getElementById('footerStep').textContent = 'บทที่ ' + (n + 1) + ' จาก ' + TOTAL_SLIDES;
+  document.getElementById('btnBack').disabled = (n === 0);
+
+  // render content
+  if (n === 1) { s1CurrentStep = 0; renderS1(0); }
+  if (n === 2) { s2CurrentStep = 0; renderS2(0); }
+  if (n === 3) { s3CurrentStep = 0; renderS3(0); }
+
+  // last slide
+  document.getElementById('btnNext').textContent = (n === TOTAL_SLIDES - 1) ? '✓ จบแล้ว' : 'ถัดไป ›';
+  document.getElementById('btnNext').classList.toggle('primary', true);
+}
+
+function navNext() {
+  if (currentSlide === 1) {
+    if (s1CurrentStep < 2) { s1Step(s1CurrentStep + 1); return; }
+  }
+  if (currentSlide === 2) {
+    if (s2CurrentStep < 2) { s2Step(s2CurrentStep + 1); return; }
+  }
+  if (currentSlide === 3) {
+    if (s3CurrentStep < 1) { s3Step(s3CurrentStep + 1); return; }
+  }
+  if (currentSlide < TOTAL_SLIDES - 1) goSlide(currentSlide + 1);
+  else {
+    // restart
+    goSlide(0);
+    s1CurrentStep = 0; s2CurrentStep = 0; s3CurrentStep = 0;
+    document.getElementById('btnNext').textContent = 'ถัดไป ›';
+  }
+}
+
+function navBack() {
+  if (currentSlide === 1 && s1CurrentStep > 0) { s1Step(s1CurrentStep - 1); return; }
+  if (currentSlide === 2 && s2CurrentStep > 0) { s2Step(s2CurrentStep - 1); return; }
+  if (currentSlide === 3 && s3CurrentStep > 0) { s3Step(s3CurrentStep - 1); return; }
+  if (currentSlide > 0) goSlide(currentSlide - 1);
+}
+
+// ── SCENE 1 ──
+function s1Step(n) {
+  s1CurrentStep = n;
+  const dots = document.querySelectorAll('#s1SubNav .sub-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i < n) d.classList.add('done');
+    else if (i === n) d.classList.add('active');
+  });
+  const nodes = ['s1n0','s1n1','s1n2'];
+  nodes.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active-step','done-step');
+    if (i < n) el.classList.add('done-step');
+    else if (i === n) el.classList.add('active-step');
+  });
+  renderS1(n);
+}
+
+function renderS1(step) {
+  const container = document.getElementById('s1Content');
+  if (step === 0) {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(247,129,102,.15);color:#f78166;border:1px solid rgba(247,129,102,.3);">OB-GYN</span>
+            <span style="font-size:.85rem;font-weight:700;">ตารางของฉัน</span>
+          </div>
+          <span style="font-size:.7rem;color:var(--muted);">พญ.ระพีพรรณ · นพ.เกียรติพร</span>
+        </div>
+        <div class="mock-tabs">
+          <div class="mock-tab active">📋 ตารางของฉัน</div>
+          <div class="mock-tab">📜 ประวัติ</div>
+          <div class="mock-tab">🏥 ตารางรวม</div>
+        </div>
+        <div class="mock-body">
+          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+            <span style="font-size:.65rem;color:var(--muted);text-transform:uppercase;padding:4px 8px;background:var(--surface2);border-radius:5px;">เดือน: มิ.ย. 2568</span>
+            <span style="font-size:.72rem;font-weight:700;color:var(--blue);background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);padding:4px 10px;border-radius:5px;" class="highlight-ring">สัปดาห์ 2 · 9–13</span>
+            <span style="font-size:.72rem;color:var(--muted2);padding:4px 10px;border:1px solid var(--border);border-radius:5px;">จ</span>
+            <span style="font-size:.72rem;font-weight:700;color:var(--orange);background:rgba(247,129,102,.1);border:1px solid rgba(247,129,102,.3);padding:4px 10px;border-radius:5px;" class="highlight-ring-orange">อ</span>
+            <span style="font-size:.72rem;color:var(--muted2);padding:4px 10px;border:1px solid var(--border);border-radius:5px;">พ</span>
+            <span style="font-size:.72rem;color:var(--muted2);padding:4px 10px;border:1px solid var(--border);border-radius:5px;">พฤ</span>
+            <span style="font-size:.72rem;color:var(--muted2);padding:4px 10px;border:1px solid var(--border);border-radius:5px;">ศ</span>
+          </div>
+
+          <div class="mock-slot">
+            <div class="mock-slot-header">
+              <span class="mock-room">OR-3</span>
+              <span class="mock-time">🌤 บ่าย · 13:00–16:00</span>
+            </div>
+            <div class="mock-slot-body">
+              <div class="mock-op" style="border-left-color:#f78166;">
+                <div class="op-info">
+                  <div class="mock-op-doc" style="color:#f78166;">พญ.ระพีพรรณ</div>
+                  <div class="mock-op-name">Cesarean section</div>
+                  <div class="mock-op-meta">13:00–14:30 · 1ชม.30น.</div>
+                </div>
+              </div>
+              <button class="mock-add-btn" style="border-color:rgba(247,129,102,.4);color:#f78166;">+ เพิ่ม operation</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2">
+        <strong>① เลือกวัน</strong> — ใช้ปุ่ม <strong>สัปดาห์</strong> เพื่อข้ามสัปดาห์ แล้วกดชื่อวัน (จ อ พ พฤ ศ) เพื่อดูตารางวันนั้น<br>ระบบแสดงเฉพาะ OR slot ที่แพทย์ท่านนั้นได้รับมอบหมาย
+      </div>
+    `;
+  } else if (step === 1) {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(247,129,102,.15);color:#f78166;border:1px solid rgba(247,129,102,.3);">OB-GYN</span>
+            <span style="font-size:.85rem;font-weight:700;">ตารางของฉัน</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-slot" style="position:relative;">
+            <div class="mock-slot-header">
+              <span class="mock-room">OR-3</span>
+              <span class="mock-time">🌤 บ่าย · 13:00–16:00</span>
+            </div>
+            <div class="mock-slot-body">
+              <button class="mock-add-btn highlight-ring" style="border-color:rgba(88,166,255,.5);color:var(--blue);background:rgba(88,166,255,.05);">
+                <span class="pointer">👆</span> + เพิ่ม operation
+              </button>
+            </div>
+
+            <div class="mock-overlay" style="position:static;background:none;display:block;border-radius:0;">
+              <div class="mock-modal" style="margin:0 auto;max-width:100%;">
+                <div class="mock-modal-title">➕ เพิ่ม Operation <span style="font-size:.68rem;color:var(--muted);font-family:var(--mono);">OR-3 · บ่าย</span></div>
+
+                <div>
+                  <label class="mock-form-label">แพทย์</label>
+                  <select class="mock-fsel">
+                    <option>พญ.ระพีพรรณ</option>
+                    <option>นพ.เกียรติพร</option>
+                    <option>พญ.อารีรัตน์</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mock-form-label">Diagnosis</label>
+                  <input class="mock-finput" value="Prev C/S, term gestation" readonly>
+                </div>
+
+                <div>
+                  <label class="mock-form-label">Operation</label>
+                  <select class="mock-fsel">
+                    <option>Cesarean section</option>
+                    <option>Hysterectomy</option>
+                    <option>อื่นๆ (พิมพ์เอง)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mock-form-label">ช่วงเวลา</label>
+                  <div class="mock-time-row">
+                    <div>
+                      <div class="mock-time-label">เริ่ม</div>
+                      <div class="mock-time-sel">
+                        <select><option>13</option><option>14</option><option>15</option></select>
+                        <span style="color:var(--muted);padding:0 2px;align-self:center;">:</span>
+                        <select><option>00</option><option>15</option><option>30</option><option>45</option></select>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="mock-time-label">สิ้นสุด</div>
+                      <div class="mock-time-sel">
+                        <select><option>13</option><option selected>14</option><option>15</option></select>
+                        <span style="color:var(--muted);padding:0 2px;align-self:center;">:</span>
+                        <select><option>00</option><option>15</option><option selected>30</option><option>45</option></select>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="font-size:.7rem;color:var(--blue);font-family:var(--mono);margin-top:3px;">⏱ 1ชม.30น.</div>
+                </div>
+
+                <div>
+                  <label class="mock-form-label">Remark (ถ้ามี)</label>
+                  <input class="mock-finput" placeholder="หมายเหตุเพิ่มเติม..." value="">
+                </div>
+
+                <div class="mock-actions">
+                  <button class="mock-btn-cancel">ยกเลิก</button>
+                  <button class="mock-btn-save highlight-ring">บันทึก</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2">
+        <strong>② กรอก Operation</strong> — กด <strong>+ เพิ่ม operation</strong> เพื่อเปิด form<br>
+        • <strong>แพทย์</strong> — เลือกได้เฉพาะแพทย์ในทีมของคุณ<br>
+        • <strong>Diagnosis</strong> — พิมพ์ได้อิสระ<br>
+        • <strong>Operation</strong> — เลือกจาก list หรือ "อื่นๆ (พิมพ์เอง)"<br>
+        • <strong>ช่วงเวลา</strong> — เลือก ชม:นาที เริ่ม/สิ้นสุด (ระบบคำนวณระยะเวลาอัตโนมัติ)
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(247,129,102,.15);color:#f78166;border:1px solid rgba(247,129,102,.3);">OB-GYN</span>
+            <span style="font-size:.85rem;font-weight:700;">ตารางของฉัน</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-slot">
+            <div class="mock-slot-header">
+              <span class="mock-room">OR-3</span>
+              <span class="mock-time">🌤 บ่าย · 13:00–16:00</span>
+            </div>
+            <div class="mock-slot-body">
+              <div class="mock-op highlight-ring" style="border-left-color:#f78166;cursor:pointer;" title="คลิกเพื่อแก้ไข">
+                <div style="flex:1;">
+                  <div class="mock-op-doc" style="color:#f78166;">พญ.ระพีพรรณ <span class="pointer" style="font-size:.8rem;">👆 คลิกเพื่อแก้ไข</span></div>
+                  <div style="font-size:.68rem;color:var(--muted2);font-style:italic;">Prev C/S, term gestation</div>
+                  <div class="mock-op-name">Cesarean section</div>
+                  <div class="mock-op-meta">13:00–14:30 · 1ชม.30น.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mock-modal" style="margin-top:10px;border-color:rgba(88,166,255,.3);">
+            <div class="mock-modal-title">✏️ แก้ไข Operation <span style="font-size:.68rem;color:var(--muted);font-family:var(--mono);">OR-3 · บ่าย</span></div>
+            <select class="mock-fsel"><option>พญ.ระพีพรรณ</option></select>
+            <input class="mock-finput" value="Prev C/S, term gestation" readonly style="margin-bottom:10px;">
+            <select class="mock-fsel"><option>Cesarean section</option></select>
+            <div class="mock-actions">
+              <button class="mock-btn-del highlight-ring-orange">🗑 ลบ</button>
+              <button class="mock-btn-cancel">ยกเลิก</button>
+              <button class="mock-btn-save">บันทึก</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2">
+        <strong>③ บันทึก · แก้ไข · ลบ</strong><br>
+        • <strong>บันทึก</strong> — กด "บันทึก" บน form ระบบ sync Firebase ภายใน ~1 วินาที<br>
+        • <strong>แก้ไข</strong> — คลิกที่ operation ใน card เพื่อเปิด form แก้ไข<br>
+        • <strong>ลบ</strong> — ปุ่ม <span style="color:#f78166;">🗑 ลบ</span> (มีเฉพาะตอนแก้ไข ไม่มีตอนเพิ่มใหม่)
+      </div>
+      <div class="callout green slide-up delay-3" style="margin-top:8px;">
+        ✓ ข้อมูลถูก sync real-time — แพทย์ท่านอื่นและ Admin เห็นการเปลี่ยนแปลงทันที
+      </div>
+    `;
+  }
+}
+
+// ── SCENE 2 ──
+function s2Step(n) {
+  s2CurrentStep = n;
+  const dots = document.querySelectorAll('#s2SubNav .sub-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active','done');
+    if (i < n) d.classList.add('done');
+    else if (i === n) d.classList.add('active');
+  });
+  renderS2(n);
+}
+
+function renderS2(step) {
+  const container = document.getElementById('s2Content');
+  if (step === 0) {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(247,129,102,.15);color:#f78166;border:1px solid rgba(247,129,102,.3);">OB-GYN</span>
+            <span style="font-size:.85rem;font-weight:700;">ประวัติของฉัน</span>
+          </div>
+        </div>
+        <div class="mock-tabs">
+          <div class="mock-tab">📋 ตารางของฉัน</div>
+          <div class="mock-tab active" style="border-bottom-color:var(--green);color:var(--text);">📜 ประวัติของฉัน</div>
+          <div class="mock-tab">🏥 ตารางรวม</div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-hist-filter">
+            <select class="mock-hist-fsel highlight-ring">
+              <option>ทั้งหมด</option>
+              <option>🔜 กำลังจะมาถึง</option>
+              <option>✅ ผ่านมาแล้ว</option>
+            </select>
+            <select class="mock-hist-fsel">
+              <option>ทุกคน</option>
+              <option>พญ.ระพีพรรณ</option>
+              <option>นพ.เกียรติพร</option>
+            </select>
+            <select class="mock-hist-fsel highlight-ring">
+              <option>ตั้งแต่ มิ.ย. 2568</option>
+              <option>ก.ค. 2568</option>
+            </select>
+            <select class="mock-hist-fsel highlight-ring">
+              <option>ถึง ก.ค. 2568</option>
+            </select>
+          </div>
+          <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;">4 รายการ</div>
+          <div class="mock-hist-list">
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date" style="color:var(--blue);">📍 วันนี้</div>
+                <div style="font-size:.65rem;color:var(--muted);">อังคาร · บ่าย</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-3</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:#f78166;">
+                <div class="mock-hist-doc" style="color:#f78166;">พญ.ระพีพรรณ</div>
+                <div class="mock-hist-op">Cesarean section</div>
+                <div class="mock-hist-meta">13:00–14:30 · 1ชม.30น.</div>
+              </div>
+            </div>
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date">🔜 12 มิ.ย. 2568</div>
+                <div style="font-size:.65rem;color:var(--muted);">พฤหัสบดี · เช้า</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-3</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:#f78166;">
+                <div class="mock-hist-doc" style="color:#f78166;">นพ.เกียรติพร</div>
+                <div class="mock-hist-op">Myomectomy</div>
+                <div class="mock-hist-meta">08:30–11:00 · 2ชม.30น.</div>
+              </div>
+            </div>
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date" style="color:var(--muted);">✅ 5 มิ.ย. 2568</div>
+                <div style="font-size:.65rem;color:var(--muted);">พุธ · เช้า</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-2</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:var(--border2);">
+                <div class="mock-hist-doc" style="color:var(--muted);">พญ.ระพีพรรณ</div>
+                <div class="mock-hist-op">Ovarian cystectomy</div>
+                <div class="mock-hist-meta">08:30–10:00 · 1ชม.30น.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2">
+        <strong>หน้าประวัติของฉัน</strong> — แสดง operation ทั้งหมดของแพทย์ในทีมคุณข้ามทุกสัปดาห์<br>
+        กรอง <strong>แสดง</strong> ได้ 3 แบบ: ทั้งหมด · กำลังจะมาถึง · ผ่านมาแล้ว<br>
+        กรอง <strong>ตั้งแต่/ถึงเดือน</strong> เพื่อดูช่วงเวลาที่ต้องการ
+      </div>
+    `;
+  } else if (step === 1) {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(247,129,102,.15);color:#f78166;border:1px solid rgba(247,129,102,.3);">OB-GYN</span>
+            <span style="font-size:.85rem;font-weight:700;">ประวัติของฉัน</span>
+          </div>
+        </div>
+        <div class="mock-tabs">
+          <div class="mock-tab">📋 ตารางของฉัน</div>
+          <div class="mock-tab active" style="border-bottom-color:var(--green);color:var(--text);">📜 ประวัติของฉัน</div>
+          <div class="mock-tab">🏥 ตารางรวม</div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-hist-filter">
+            <select class="mock-hist-fsel highlight-ring" style="border-color:var(--green);color:var(--green);background:rgba(63,185,80,.08);">
+              <option>🔜 กำลังจะมาถึง</option>
+            </select>
+            <select class="mock-hist-fsel"><option>ทุกคน</option></select>
+            <select class="mock-hist-fsel"><option>ตั้งแต่ มิ.ย. 2568</option></select>
+            <select class="mock-hist-fsel"><option>ถึง ก.ค. 2568</option></select>
+          </div>
+          <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;">5 รายการ</div>
+          <div class="mock-hist-list">
+            <div class="mock-hist-item" style="background:rgba(88,166,255,.04);">
+              <div>
+                <div class="mock-hist-date" style="color:var(--blue);">📍 วันนี้</div>
+                <div style="font-size:.65rem;color:var(--muted);">อังคาร · บ่าย</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-3</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:#f78166;">
+                <div class="mock-hist-doc" style="color:#f78166;">พญ.ระพีพรรณ</div>
+                <div style="font-size:.68rem;color:var(--muted2);font-style:italic;">Prev C/S, term gestation</div>
+                <div class="mock-hist-op">Cesarean section</div>
+                <div class="mock-hist-meta">13:00–14:30 · 1ชม.30น.</div>
+              </div>
+            </div>
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date" style="color:var(--text);">🔜 12 มิ.ย. 68</div>
+                <div style="font-size:.65rem;color:var(--muted);">พฤหัสบดี · เช้า</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-3</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:#f78166;">
+                <div class="mock-hist-doc" style="color:#f78166;">นพ.เกียรติพร</div>
+                <div style="font-size:.68rem;color:var(--muted2);font-style:italic;">Uterine fibroid</div>
+                <div class="mock-hist-op">Myomectomy</div>
+                <div class="mock-hist-meta">08:30–11:00 · 2ชม.30น.</div>
+              </div>
+            </div>
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date" style="color:var(--text);">🔜 18 มิ.ย. 68</div>
+                <div style="font-size:.65rem;color:var(--muted);">พุธ · เช้า</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-2</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:#f78166;">
+                <div class="mock-hist-doc" style="color:#f78166;">พญ.ระพีพรรณ</div>
+                <div style="font-size:.68rem;color:var(--muted2);font-style:italic;">Rt ovarian cyst 6 cm</div>
+                <div class="mock-hist-op">Ovarian cystectomy</div>
+                <div class="mock-hist-meta">08:30–10:00 · 1ชม.30น.</div>
+              </div>
+            </div>
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date" style="color:var(--text);">🔜 25 มิ.ย. 68</div>
+                <div style="font-size:.65rem;color:var(--muted);">พุธ · เช้า</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-2</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:#f78166;">
+                <div class="mock-hist-doc" style="color:#f78166;">พญ.อารีรัตน์</div>
+                <div style="font-size:.68rem;color:var(--muted2);font-style:italic;">Cervical dysplasia CIN III</div>
+                <div class="mock-hist-op">Cervical conization</div>
+                <div class="mock-hist-meta">08:30–09:30 · 1ชม.</div>
+              </div>
+            </div>
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date" style="color:var(--text);">🔜 3 ก.ค. 68</div>
+                <div style="font-size:.65rem;color:var(--muted);">พฤหัสบดี · บ่าย</div>
+                <div style="font-size:.65rem;color:var(--muted);">OR-3</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:#f78166;">
+                <div class="mock-hist-doc" style="color:#f78166;">นพ.เกียรติพร</div>
+                <div style="font-size:.68rem;color:var(--muted2);font-style:italic;">DUB, failed medical treatment</div>
+                <div class="mock-hist-op">Hysterectomy</div>
+                <div class="mock-hist-meta">13:00–15:30 · 2ชม.30น.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2" style="border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06);">
+        <strong style="color:var(--green);">🔜 กำลังจะมาถึง</strong> — ดู operation ที่นัดไว้ทั้งหมดในอนาคต เรียงจากใกล้สุดก่อน<br>
+        แสดง <strong>Diagnosis</strong> ใต้ชื่อแพทย์ด้วย — ทำให้เตรียมความพร้อมได้ง่ายขึ้น<br>
+        ใช้ตรวจสอบว่า <strong>set ไปแล้วครบหรือยัง</strong> ก่อนสัปดาห์จะมาถึง
+      </div>
+      <div class="callout slide-up delay-3" style="margin-top:8px;">
+        ✓ <strong>คลิกที่รายการใดก็ได้</strong> — กระโดดไปหน้า <strong>ตารางของฉัน</strong> วันนั้นทันที เพื่อแก้ไขหรือเพิ่ม operation
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(247,129,102,.15);color:#f78166;border:1px solid rgba(247,129,102,.3);">OB-GYN</span>
+            <span style="font-size:.85rem;font-weight:700;">ประวัติของฉัน</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-hist-filter">
+            <select class="mock-hist-fsel"><option>✅ ผ่านมาแล้ว</option></select>
+            <select class="mock-hist-fsel"><option>พญ.ระพีพรรณ</option></select>
+            <select class="mock-hist-fsel highlight-ring"><option>ตั้งแต่ พ.ค. 2568</option></select>
+            <select class="mock-hist-fsel highlight-ring"><option>ถึง พ.ค. 2568</option></select>
+          </div>
+          <div style="font-size:.7rem;color:var(--muted);margin-bottom:6px;">2 รายการ</div>
+          <div class="mock-hist-list">
+            <div class="mock-hist-item highlight-ring" style="border-radius:0;">
+              <div>
+                <div class="mock-hist-date" style="color:var(--muted);">✅ 28 พ.ค. 2568</div>
+                <div style="font-size:.65rem;color:var(--muted);">พุธ · เช้า · OR-2</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:var(--border2);">
+                <div class="mock-hist-doc" style="color:var(--muted);">พญ.ระพีพรรณ</div>
+                <div class="mock-hist-op">Cesarean section</div>
+                <div class="mock-hist-meta">08:30–10:00 · 1ชม.30น. <span style="color:var(--blue);">👆 คลิกเพื่อไปวันนั้น</span></div>
+              </div>
+            </div>
+            <div class="mock-hist-item">
+              <div>
+                <div class="mock-hist-date" style="color:var(--muted);">✅ 21 พ.ค. 2568</div>
+                <div style="font-size:.65rem;color:var(--muted);">จันทร์ · บ่าย · OR-1</div>
+              </div>
+              <div class="mock-hist-info" style="border-left-color:var(--border2);">
+                <div class="mock-hist-doc" style="color:var(--muted);">พญ.ระพีพรรณ</div>
+                <div class="mock-hist-op">D&C</div>
+                <div class="mock-hist-meta">13:00–14:00 · 1ชม.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2">
+        <strong>กรองตามเดือน</strong> — ใช้ <strong>ตั้งแต่เดือน / ถึงเดือน</strong> เพื่อดูช่วงที่ต้องการ เช่น ย้อนดูสถิติเดือนก่อน<br>
+        กรองเพิ่มตาม <strong>แพทย์</strong> เพื่อดูเฉพาะคนใดคนหนึ่งในทีม
+      </div>
+      <div class="callout green slide-up delay-3" style="margin-top:8px;">
+        ✓ <strong>คลิกที่รายการ</strong> ในประวัติ — กระโดดไปหน้า <strong>ตารางของฉัน</strong> วันนั้นทันที เพื่อแก้ไขหรือเพิ่ม operation
+      </div>
+    `;
+  }
+}
+
+// ── SCENE 3 ──
+function s3Step(n) {
+  s3CurrentStep = n;
+  const dots = document.querySelectorAll('#s3SubNav .sub-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('active','done');
+    if (i < n) d.classList.add('done');
+    else if (i === n) d.classList.add('active');
+  });
+  renderS3(n);
+}
+
+function renderS3(step) {
+  const container = document.getElementById('s3Content');
+  if (step === 0) {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(88,166,255,.15);color:var(--blue);border:1px solid rgba(88,166,255,.3);">🔑 Admin</span>
+            <span style="font-size:.85rem;font-weight:700;">ตารางรวม</span>
+          </div>
+        </div>
+        <div class="mock-tabs">
+          <div class="mock-tab">📋 ตารางของฉัน</div>
+          <div class="mock-tab">📜 ประวัติ</div>
+          <div class="mock-tab active" style="border-bottom-color:var(--purple);color:var(--text);">🏥 ตารางรวม</div>
+        </div>
+        <div class="mock-body">
+          <div style="display:flex;gap:6px;margin-bottom:12px;">
+            <span style="font-size:.72rem;padding:4px 10px;border:1px solid var(--border);border-radius:5px;color:var(--muted2);">มิ.ย. 2568</span>
+            <span style="font-size:.72rem;padding:4px 10px;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3);border-radius:5px;color:var(--blue);">สัปดาห์ 2</span>
+            <span style="font-size:.72rem;padding:4px 10px;background:rgba(247,129,102,.1);border:1px solid rgba(247,129,102,.3);border-radius:5px;color:var(--orange);">อังคาร 10</span>
+          </div>
+          <div class="mock-central-grid">
+            <div class="mock-cv-room">
+              <div class="mock-cv-header">OR-1</div>
+              <div class="mock-cv-sessions">
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">☀ เช้า 08:30–12:00</div>
+                  <div class="mock-cv-op" style="border-left-color:#79c0ff;background:rgba(121,192,255,.1);">
+                    <div class="mock-cv-doc" style="color:#79c0ff;">นพ.ณัฐวัฒน์</div>
+                    <div class="mock-cv-name">BSSRO</div>
+                  </div>
+                </div>
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">🌤 บ่าย 13:00–16:00</div>
+                  <div class="mock-cv-op" style="border-left-color:#79c0ff;background:rgba(121,192,255,.1);">
+                    <div class="mock-cv-doc" style="color:#79c0ff;">นพ.ณัฐวัฒน์</div>
+                    <div class="mock-cv-name">Lefort 1 osteotomy</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mock-cv-room">
+              <div class="mock-cv-header">OR-2</div>
+              <div class="mock-cv-sessions">
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">☀ เช้า 08:30–12:00</div>
+                  <div class="mock-cv-op" style="border-left-color:#3fb950;background:rgba(63,185,80,.1);">
+                    <div class="mock-cv-doc" style="color:#3fb950;">นพ.ภัทรพล</div>
+                    <div class="mock-cv-name">ORIF femur</div>
+                  </div>
+                  <div class="mock-cv-op" style="border-left-color:#3fb950;background:rgba(63,185,80,.1);margin-top:3px;">
+                    <div class="mock-cv-doc" style="color:#3fb950;">นพ.ภัทรพล</div>
+                    <div class="mock-cv-name">Arthroscopy</div>
+                  </div>
+                </div>
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">🌤 บ่าย 13:00–16:00</div>
+                  <div class="mock-cv-empty">ว่าง</div>
+                </div>
+              </div>
+            </div>
+            <div class="mock-cv-room">
+              <div class="mock-cv-header">OR-3</div>
+              <div class="mock-cv-sessions">
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">☀ เช้า 08:30–12:00</div>
+                  <div class="mock-cv-op" style="border-left-color:#58a6ff;background:rgba(88,166,255,.1);">
+                    <div class="mock-cv-doc" style="color:#58a6ff;">พญ.ทัชชา</div>
+                    <div class="mock-cv-name">Cholecystectomy</div>
+                  </div>
+                </div>
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">🌤 บ่าย 13:00–16:00</div>
+                  <div class="mock-cv-op" style="border-left-color:#f78166;background:rgba(247,129,102,.1);">
+                    <div class="mock-cv-doc" style="color:#f78166;">พญ.ระพีพรรณ</div>
+                    <div class="mock-cv-name">Cesarean section</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mock-cv-room">
+              <div class="mock-cv-header">OR-4</div>
+              <div class="mock-cv-sessions">
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">☀ เช้า 08:30–12:00</div>
+                  <div class="mock-cv-op" style="border-left-color:#e3b341;background:rgba(227,179,65,.1);">
+                    <div class="mock-cv-doc" style="color:#e3b341;">พญ.ชัชฎาภรณ์</div>
+                    <div class="mock-cv-name">PE + IOL</div>
+                  </div>
+                  <div class="mock-cv-op" style="border-left-color:#e3b341;background:rgba(227,179,65,.1);margin-top:3px;">
+                    <div class="mock-cv-doc" style="color:#e3b341;">พญ.ชัชฎาภรณ์</div>
+                    <div class="mock-cv-name">IVT</div>
+                  </div>
+                </div>
+                <div class="mock-cv-sess">
+                  <div class="mock-cv-label">🌤 บ่าย 13:00–16:00</div>
+                  <div class="mock-cv-op" style="border-left-color:#e3b341;background:rgba(227,179,65,.1);">
+                    <div class="mock-cv-doc" style="color:#e3b341;">พญ.ณัฐนรี</div>
+                    <div class="mock-cv-name">PPV</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2">
+        <strong>ตารางรวม</strong> — แสดงทุกห้อง (OR-1 ถึง OR-4) พร้อมกัน แบ่งตาม <strong>เช้า/บ่าย</strong><br>
+        สีของ operation ตรงกับแผนกของแพทย์: 🔴 OB-GYN · 🔵 ศัลยกรรม · 🟢 ออร์โธ · 🟡 จักษุ · 🟣 ศัลย์ประสาท · 🔷 Maxillo
+      </div>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="mock-shell slide-up">
+        <div class="mock-topbar">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="mock-badge" style="background:rgba(63,185,80,.1);color:var(--green);border:1px solid rgba(63,185,80,.3);">👁 View Only</span>
+            <span style="font-size:.85rem;font-weight:700;">ตารางรวม</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.3);border-radius:7px;padding:10px 14px;margin-bottom:12px;font-size:.8rem;color:var(--green);">
+            👁 <strong>View Only Mode</strong> — ดูได้อย่างเดียว ไม่สามารถเพิ่ม/แก้ไข operation ได้
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--blue);">4</div>
+              <div style="font-size:.7rem;color:var(--muted);">ห้องผ่าตัด</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--orange);">8</div>
+              <div style="font-size:.7rem;color:var(--muted);">operations วันนี้</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--green);">6</div>
+              <div style="font-size:.7rem;color:var(--muted);">แพทย์ปฏิบัติงาน</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px;text-align:center;">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--border2);">0</div>
+              <div style="font-size:.7rem;color:var(--muted);">slot ว่าง (บ่าย)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="callout slide-up delay-2">
+        <strong>สิทธิ์การเข้าถึงตารางรวม:</strong><br>
+        • <strong>แพทย์ทุกท่าน</strong> — ดูได้, แต่แก้ไขได้เฉพาะ slot ของตัวเอง<br>
+        • <strong>xxx (View Only)</strong> — ดูตารางรวมได้อย่างเดียว ไม่มีปุ่มแก้ไข<br>
+        • <strong>Admin01</strong> — ดูและแก้ไขได้ทุกอย่าง พร้อม Audit Log
+      </div>
+      <div class="callout green slide-up delay-3" style="margin-top:8px;">
+        ✓ ข้อมูล refresh อัตโนมัติทุก 8 วินาที — ไม่ต้อง reload หน้า
+      </div>
+    `;
+  }
+}
+
+// ── INIT ──
+renderS1(0);
+renderS2(0);
+renderS3(0);
 </script>
 </body>
 </html>
