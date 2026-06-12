@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คู่มือการใช้งาน OR Schedule · KSH</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0d1117;
+  --surface:#161b22;
+  --surface2:#21262d;
+  --border:#30363d;
+  --text:#e6edf3;
+  --muted:#7d8590;
+  --blue:#58a6ff;
+  --orange:#f78166;
+  --green:#3fb950;
+  --purple:#d2a8ff;
+  --yellow:#e3b341;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Sans Thai',system-ui,sans-serif;
+  line-height:1.6;
+}
+
+/* ── HERO ── */
+.hero{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:40px 24px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%, rgba(88,166,255,.08) 0%, transparent 70%),
+             radial-gradient(ellipse 60% 40% at 80% 100%, rgba(63,185,80,.06) 0%, transparent 60%);
+  pointer-events:none;
+}
+.hero-label{
+  font-size:.72rem;font-weight:700;
+  color:var(--blue);
+  text-transform:uppercase;letter-spacing:.15em;
+  margin-bottom:16px;
+}
+.hero h1{
+  font-size:clamp(2rem,6vw,3.5rem);
+  font-weight:700;
+  letter-spacing:-.03em;
+  line-height:1.1;
+  margin-bottom:16px;
+}
+.hero h1 span{color:var(--blue);}
+.hero-sub{
+  font-size:1.05rem;color:var(--muted);
+  max-width:480px;margin-bottom:40px;
+  line-height:1.7;
+}
+.feature-pills{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:48px;
+}
+.feature-pill{
+  padding:6px 16px;border-radius:20px;font-size:.82rem;font-weight:600;
+  border:1px solid;
+}
+.pill-blue{border-color:var(--blue);color:var(--blue);background:rgba(88,166,255,.08);}
+.pill-green{border-color:var(--green);color:var(--green);background:rgba(63,185,80,.08);}
+.pill-purple{border-color:var(--purple);color:var(--purple);background:rgba(210,168,255,.08);}
+
+.scroll-hint{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  color:var(--muted);font-size:.78rem;
+  animation:bounce 2s infinite;
+}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(6px);}}
+.scroll-arrow{font-size:1.2rem;}
+
+/* ── SECTION ── */
+.section{
+  max-width:900px;margin:0 auto;
+  padding:80px 24px;
+}
+.section-number{
+  font-size:.68rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.12em;
+  margin-bottom:8px;
+}
+.section h2{
+  font-size:clamp(1.6rem,4vw,2.4rem);
+  font-weight:700;letter-spacing:-.02em;
+  margin-bottom:12px;line-height:1.2;
+}
+.section-desc{
+  font-size:1rem;color:var(--muted);
+  max-width:540px;margin-bottom:40px;line-height:1.7;
+}
+
+/* ── STEP CARDS ── */
+.steps{display:flex;flex-direction:column;gap:16px;}
+.step{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px 24px;
+  display:flex;gap:20px;align-items:flex-start;
+  transition:border-color .2s, transform .2s;
+}
+.step:hover{border-color:var(--blue);transform:translateX(4px);}
+.step-num{
+  flex-shrink:0;
+  width:36px;height:36px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;font-weight:700;
+  font-family:'IBM Plex Mono',monospace;
+}
+.step-body h3{font-size:.95rem;font-weight:700;margin-bottom:4px;}
+.step-body p{font-size:.85rem;color:var(--muted);line-height:1.6;}
+.step-body .tag{
+  display:inline-block;
+  padding:2px 8px;border-radius:4px;
+  font-size:.72rem;font-weight:600;
+  margin-top:8px;
+}
+
+/* ── DEMO MOCKUP ── */
+.mockup{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  margin-bottom:40px;
+}
+.mockup-bar{
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  padding:10px 16px;
+  display:flex;align-items:center;gap:8px;
+}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.mockup-title{font-size:.75rem;color:var(--muted);margin-left:8px;font-family:'IBM Plex Mono',monospace;}
+.mockup-body{padding:16px;}
+
+/* ── MODAL DEMO ── */
+.modal-demo{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:16px;
+  max-width:320px;
+  margin:0 auto;
+}
+.modal-row{margin-bottom:10px;}
+.modal-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.modal-field{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);padding:7px 10px;border-radius:6px;
+  font-size:.82rem;font-family:inherit;
+}
+.modal-time-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.modal-btn-row{display:flex;gap:8px;margin-top:14px;justify-content:flex-end;}
+.mbtn{padding:7px 14px;border-radius:6px;font-size:.82rem;cursor:pointer;border:none;font-family:inherit;}
+.mbtn-primary{background:var(--blue);color:#0d1117;font-weight:700;}
+.mbtn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.mbtn-red{background:rgba(247,129,102,.15);color:var(--orange);margin-right:auto;}
+
+/* ── HISTORY DEMO ── */
+.hist-item{
+  border-left:3px solid;
+  padding:10px 14px;
+  border-radius:0 8px 8px 0;
+  margin-bottom:8px;
+  background:var(--surface2);
+}
+.hist-date{font-size:.7rem;color:var(--muted);margin-bottom:2px;font-family:'IBM Plex Mono',monospace;}
+.hist-doc{font-size:.78rem;font-weight:700;margin-bottom:1px;}
+.hist-op{font-size:.85rem;font-weight:600;}
+.hist-time{font-size:.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.filter-sel{
+  background:var(--bg);border:1px solid var(--border);color:var(--text);
+  padding:5px 10px;border-radius:6px;font-size:.78rem;font-family:inherit;
+}
+
+/* ── CENTRAL DEMO ── */
+.room-demo{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;margin-bottom:8px;overflow:hidden;
+}
+.room-header{
+  background:var(--bg);padding:7px 12px;
+  font-size:.82rem;font-weight:700;border-bottom:1px solid var(--border);
+}
+.room-sessions{display:grid;grid-template-columns:1fr 1fr;}
+.room-session{padding:10px 12px;border-right:1px solid var(--border);}
+.room-session:last-child{border-right:none;}
+.sess-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.sess-op{
+  border-left:3px solid;border-radius:0 5px 5px 0;
+  padding:4px 8px;margin-bottom:4px;font-size:.72rem;
+}
+.sess-op-doc{font-weight:700;}
+.sess-op-name{color:var(--muted);}
+.sess-empty{font-size:.72rem;color:var(--border);font-style:italic;}
+
+/* ── DIVIDER ── */
+.section-divider{
+  border:none;border-top:1px solid var(--border);
+  margin:0;
+}
+
+/* ── FOOTER ── */
+.footer{
+  text-align:center;padding:60px 24px;
+  color:var(--muted);font-size:.82rem;
+  border-top:1px solid var(--border);
+}
+.footer strong{color:var(--text);}
+
+/* ── ANIMATIONS ── */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.fade-in.visible{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-label">🏥 KSH · OR Schedule</div>
+  <h1>คู่มือการใช้งาน<br><span>ระบบ OR Elective Schedule</span></h1>
+  <p class="hero-sub">เรียนรู้การใช้งาน 3 feature หลักของระบบจองห้องผ่าตัดออนไลน์ สำหรับแพทย์และเจ้าหน้าที่</p>
+  <div class="feature-pills">
+    <a href="#feature1" class="feature-pill pill-blue">📋 การ Set ผ่าตัด</a>
+    <a href="#feature2" class="feature-pill pill-green">📜 ประวัติของฉัน</a>
+    <a href="#feature3" class="feature-pill pill-purple">🏥 ตารางรวม</a>
+  </div>
+  <div class="scroll-hint">
+    <span>เลื่อนเพื่อดูคู่มือ</span>
+    <span class="scroll-arrow">↓</span>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- FEATURE 1: SET OPERATION -->
+<section class="section fade-in" id="feature1">
+  <div class="section-number" style="color:var(--blue);">Feature 01</div>
+  <h2 style="color:var(--blue);">การ Set ผ่าตัด<br>แก้ไข และลบ</h2>
+  <p class="section-desc">เลือกวันที่มี OR slot ของคุณ แล้วเพิ่ม operation ได้ทันที พร้อมระบุแพทย์ diagnosis เวลา และ remark</p>
+
+  <!-- Mockup -->
+  <div class="mockup fade-in">
+    <div class="mockup-bar">
+      <div class="dot" style="background:#f78166;"></div>
+      <div class="dot" style="background:#e3b341;"></div>
+      <div class="dot" style="background:#3fb950;"></div>
+      <span class="mockup-title">เพิ่ม Operation — OR-3 · พุธ เช้า</span>
+    </div>
+    <div class="mockup-body">
+      <div class="modal-demo">
+        <div class="modal-row">
+          <div class="modal-label">แพทย์</div>
+          <select class="modal-field">
+            <option>พญ.ระพีพรรณ</option>
+            <option>นพ.เกียรติพร</option>
+            <option>พญ.อารีรัตน์</option>
+          </select>
+        </div>
+        <div class="modal-row">
+          <div class="modal-label">Diagnosis</div>
+          <input class="modal-field" type="text" placeholder="เช่น Previous C/S, Myoma" value="G2P1 38+5 wk CPD">
+        </div>
+        <div class="modal-row">
+          <div class="modal-label">Operation</div>
+          <select class="modal-field">
+            <option>Cesarean section</option>
+          </select>
+        </div>
+        <div class="modal-row">
+          <div class="modal-label">ช่วงเวลา</div>
+          <div class="modal-time-row">
+            <select class="modal-field"><option>09</option><option selected>10</option><option>11</option></select>
+            <select class="modal-field"><option selected>00</option><option>15</option><option>30</option><option>45</option></select>
+          </div>
+          <div style="font-size:.7rem;color:var(--purple);margin-top:4px;font-family:monospace;">⏱ 1ชม.30น.</div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-label">Remark (ถ้ามี)</div>
+          <input class="modal-field" type="text" placeholder="หมายเหตุ..." value="">
+        </div>
+        <div class="modal-btn-row">
+          <button class="mbtn mbtn-red">ลบ</button>
+          <button class="mbtn mbtn-ghost">ยกเลิก</button>
+          <button class="mbtn mbtn-primary">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(88,166,255,.15);color:var(--blue);">1</div>
+      <div class="step-body">
+        <h3>เลือกวันที่มี OR slot</h3>
+        <p>กดปุ่มวันในแถบด้านบน ระบบจะแสดงเฉพาะ slot ของคุณตามที่ได้รับมอบหมาย เช่น OR-3 พุธเช้า</p>
+        <span class="tag" style="background:rgba(88,166,255,.1);color:var(--blue);">📋 ตารางของฉัน</span>
+      </div>
+    </div>
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(88,166,255,.15);color:var(--blue);">2</div>
+      <div class="step-body">
+        <h3>กด "+ เพิ่ม operation"</h3>
+        <p>กรอก Diagnosis, เลือก Operation, ตั้งเวลา (ชั่วโมง:นาที — เลือกได้ 00, 15, 30, 45) และ Remark ถ้ามี</p>
+        <span class="tag" style="background:rgba(63,185,80,.1);color:var(--green);">✓ บันทึกอัตโนมัติขึ้น Firebase</span>
+      </div>
+    </div>
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(88,166,255,.15);color:var(--blue);">3</div>
+      <div class="step-body">
+        <h3>แก้ไขหรือลบ</h3>
+        <p>กดที่การ์ด operation ใดก็ได้เพื่อเปิด modal แก้ไข กดปุ่ม "ลบ" สีแดงเพื่อลบออก ระบบ sync ทุกเครื่องทันที</p>
+        <span class="tag" style="background:rgba(247,129,102,.1);color:var(--orange);">⚠ ระบบจะแจ้งเตือนถ้าเวลาซ้อนทับกัน</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- FEATURE 2: HISTORY -->
+<section class="section fade-in" id="feature2">
+  <div class="section-number" style="color:var(--green);">Feature 02</div>
+  <h2 style="color:var(--green);">ประวัติของฉัน</h2>
+  <p class="section-desc">ดูรายการผ่าตัดทั้งหมดของคุณ — ที่ผ่านมาแล้ว วันนี้ และที่กำลังจะมาถึง กรองตามแพทย์และช่วงเดือนได้</p>
+
+  <div class="mockup fade-in">
+    <div class="mockup-bar">
+      <div class="dot" style="background:#f78166;"></div>
+      <div class="dot" style="background:#e3b341;"></div>
+      <div class="dot" style="background:#3fb950;"></div>
+      <span class="mockup-title">📜 ประวัติของฉัน</span>
+    </div>
+    <div class="mockup-body">
+      <!-- Filters -->
+      <div class="filter-row">
+        <select class="filter-sel"><option>🔜 กำลังจะมาถึง</option></select>
+        <select class="filter-sel"><option>พญ.อารีรัตน์</option></select>
+        <select class="filter-sel"><option>มิ.ย. 2569</option></select>
+        <select class="filter-sel"><option>ก.ค. 2569</option></select>
+      </div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:10px;">3 รายการ</div>
+      <!-- Items -->
+      <div class="hist-item" style="border-color:var(--orange);">
+        <div class="hist-date">📍 วันนี้ · พุธ · ☀ เช้า · OR-3</div>
+        <div class="hist-doc" style="color:var(--orange);">พญ.อารีรัตน์</div>
+        <div class="hist-op">Cesarean section</div>
+        <div class="hist-time">10:00–11:30 · 1ชม.30น.</div>
+      </div>
+      <div class="hist-item" style="border-color:var(--orange);">
+        <div class="hist-date">🔜 15 มิ.ย. 2569 · จันทร์ · 🌤 บ่าย · OR-1</div>
+        <div class="hist-doc" style="color:var(--orange);">พญ.อารีรัตน์</div>
+        <div class="hist-op">Ovarian cystectomy</div>
+        <div class="hist-time">13:00–14:00 · 1ชม.</div>
+      </div>
+      <div class="hist-item" style="border-color:var(--orange);">
+        <div class="hist-date">🔜 2 ก.ค. 2569 · พฤหัสบดี · ☀ เช้า · OR-3</div>
+        <div class="hist-doc" style="color:var(--orange);">พญ.อารีรัตน์</div>
+        <div class="hist-op">Hysterectomy</div>
+        <div class="hist-time">09:30–12:00 · 2ชม.30น.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(63,185,80,.15);color:var(--green);">1</div>
+      <div class="step-body">
+        <h3>เปิดแท็บ "📜 ประวัติของฉัน"</h3>
+        <p>ระบบจะดึงรายการผ่าตัดทั้งหมดของคุณจาก Firebase แสดงพร้อมไอคอนสถานะ 📍 วันนี้ · 🔜 กำลังจะมาถึง · ✅ ผ่านแล้ว</p>
+      </div>
+    </div>
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(63,185,80,.15);color:var(--green);">2</div>
+      <div class="step-body">
+        <h3>กรองข้อมูลตามต้องการ</h3>
+        <p>เลือก "แสดง" เพื่อดูเฉพาะกำลังจะมาถึงหรือผ่านมาแล้ว เลือก "แพทย์" และกำหนดช่วงเดือนได้อิสระ</p>
+        <span class="tag" style="background:rgba(63,185,80,.1);color:var(--green);">เช่น มิ.ย. 2569 → ส.ค. 2569</span>
+      </div>
+    </div>
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(63,185,80,.15);color:var(--green);">3</div>
+      <div class="step-body">
+        <h3>กดรายการเพื่อไปวันนั้นทันที</h3>
+        <p>กดที่ operation ใดก็ได้ ระบบจะกระโดดไปยังวันนั้นในแท็บ "ตารางของฉัน" โดยอัตโนมัติ</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- FEATURE 3: CENTRAL VIEW -->
+<section class="section fade-in" id="feature3">
+  <div class="section-number" style="color:var(--purple);">Feature 03</div>
+  <h2 style="color:var(--purple);">ตารางรวม</h2>
+  <p class="section-desc">ดูภาพรวมการใช้ห้องผ่าตัดทุกห้อง ทุกแผนก ทุกแพทย์ ในวันที่เลือก แยกเช้า-บ่าย ชัดเจน</p>
+
+  <div class="mockup fade-in">
+    <div class="mockup-bar">
+      <div class="dot" style="background:#f78166;"></div>
+      <div class="dot" style="background:#e3b341;"></div>
+      <div class="dot" style="background:#3fb950;"></div>
+      <span class="mockup-title">🏥 ตารางรวม · พุธ 11 มิ.ย. 2569</span>
+    </div>
+    <div class="mockup-body">
+      <div class="room-demo">
+        <div class="room-header">OR-1</div>
+        <div class="room-sessions">
+          <div class="room-session">
+            <div class="sess-label">☀ เช้า 08:30–12:00</div>
+            <div class="sess-op" style="border-color:var(--blue);background:rgba(88,166,255,.1);">
+              <div class="sess-op-doc" style="color:var(--blue);">นพ.สมชาย ว.</div>
+              <div class="sess-op-name">Cholecystectomy</div>
+              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">09:00–11:00</div>
+            </div>
+          </div>
+          <div class="room-session">
+            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
+            <div class="sess-empty">ว่าง</div>
+          </div>
+        </div>
+      </div>
+      <div class="room-demo">
+        <div class="room-header">OR-2</div>
+        <div class="room-sessions">
+          <div class="room-session">
+            <div class="sess-label">☀ เช้า 08:30–12:00</div>
+            <div class="sess-op" style="border-color:var(--orange);background:rgba(247,129,102,.1);">
+              <div class="sess-op-doc" style="color:var(--orange);">พญ.ระพีพรรณ</div>
+              <div class="sess-op-name">Cesarean section</div>
+              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">10:00–11:30</div>
+            </div>
+          </div>
+          <div class="room-session">
+            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
+            <div class="sess-op" style="border-color:var(--orange);background:rgba(247,129,102,.1);">
+              <div class="sess-op-doc" style="color:var(--orange);">นพ.เกียรติพร</div>
+              <div class="sess-op-name">Hysterectomy</div>
+              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">13:00–15:30</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="room-demo">
+        <div class="room-header">OR-3</div>
+        <div class="room-sessions">
+          <div class="room-session">
+            <div class="sess-label">☀ เช้า 08:30–12:00</div>
+            <div class="sess-op" style="border-color:var(--green);background:rgba(63,185,80,.1);">
+              <div class="sess-op-doc" style="color:var(--green);">นพ.ภัทรพล</div>
+              <div class="sess-op-name">ORIF femur</div>
+              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">08:30–11:00</div>
+            </div>
+          </div>
+          <div class="room-session">
+            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
+            <div class="sess-empty">ว่าง</div>
+          </div>
+        </div>
+      </div>
+      <div class="room-demo">
+        <div class="room-header">OR-4</div>
+        <div class="room-sessions">
+          <div class="room-session">
+            <div class="sess-label">☀ เช้า 08:30–12:00</div>
+            <div class="sess-op" style="border-color:var(--yellow);background:rgba(227,179,65,.1);">
+              <div class="sess-op-doc" style="color:var(--yellow);">พญ.ชัชฎาภรณ์</div>
+              <div class="sess-op-name">PE + IOL</div>
+              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">09:00–10:00</div>
+            </div>
+          </div>
+          <div class="room-session">
+            <div class="sess-label">🌤 บ่าย 13:00–16:00</div>
+            <div class="sess-op" style="border-color:var(--yellow);background:rgba(227,179,65,.1);">
+              <div class="sess-op-doc" style="color:var(--yellow);">พญ.ณัฐนรี</div>
+              <div class="sess-op-name">Ptx</div>
+              <div style="font-size:.62rem;color:var(--muted);font-family:monospace;">13:30–14:30</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(210,168,255,.15);color:var(--purple);">1</div>
+      <div class="step-body">
+        <h3>เปิดแท็บ "🏥 ตารางรวม"</h3>
+        <p>ระบบดึงข้อมูลจากทุกแผนกมาแสดงพร้อมกัน เห็น OR-1 ถึง OR-4 ครบในหน้าเดียว</p>
+      </div>
+    </div>
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(210,168,255,.15);color:var(--purple);">2</div>
+      <div class="step-body">
+        <h3>เลือกเดือน สัปดาห์ และวัน</h3>
+        <p>นำทางด้วยปุ่มเดือน สัปดาห์ และวันเหมือนกับหน้าตารางของฉัน ข้อมูลอัปเดตทุก 8 วินาที</p>
+        <span class="tag" style="background:rgba(210,168,255,.1);color:var(--purple);">● เชื่อมต่อแล้ว · sync อัตโนมัติ</span>
+      </div>
+    </div>
+    <div class="step fade-in">
+      <div class="step-num" style="background:rgba(210,168,255,.15);color:var(--purple);">3</div>
+      <div class="step-body">
+        <h3>สีแยกตามแผนก</h3>
+        <p>🔵 ศัลยกรรม · 🟠 สูตินรีเวช · 🟢 ออร์โธปีดิกส์ · 🟡 จักษุ · 🟣 ศัลย์ประสาท · 🔷 Maxillo ดูได้ทันทีว่าห้องไหนว่างหรือเต็ม</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<footer class="footer">
+  <p style="margin-bottom:8px;font-size:1rem;"><strong>OR Elective Schedule · KSH</strong></p>
+  <p>ข้อมูลเก็บใน Firebase Realtime Database · sync ทุกเครื่องอัตโนมัติ</p>
+  <p style="margin-top:8px;">สอบถามการใช้งานเพิ่มเติมติดต่อผู้ดูแลระบบ</p>
+</footer>
+
+<script>
+// Scroll-triggered fade in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
