@@ -23,7 +23,7 @@ button,select,input{font-family:inherit;}
 
 /* ── DEPT COLORS ── */
 .dept-obstetrics  {--dc:#f78166;--db:rgba(247,129,102,.15);}
-.dept-surgery     {--dc:#58a6ff;--db:rgba(88,166,255,.15);}a
+.dept-surgery     {--dc:#58a6ff;--db:rgba(88,166,255,.15);}
 .dept-orthopedics {--dc:#3fb950;--db:rgba(63,185,80,.15);}
 .dept-ophthalmology{--dc:#e3b341;--db:rgba(227,179,65,.15);}
 .dept-neurosurgery{--dc:#d2a8ff;--db:rgba(210,168,255,.15);}
@@ -559,16 +559,28 @@ async function loadAllData(){
   document.getElementById('tabLog').style.display=currentUser.isAdmin?'block':'none';
   if(currentUser.isViewer) switchTab('central');
 
-  // init week/day: if today >= June 29 2026 use today, else use week containing June 29
-  if(_afterStart){
-    curWeek=findTodayWeek(curYear,curMonth);
-    curDay=todayDayIdx();
-    cWeek=curWeek; cDay=curDay;
+  // ── init to TODAY every login ──────────────────────
+  // reset month to today's real month
+  const loginNow = new Date();
+  curYear  = loginNow.getFullYear();
+  curMonth = loginNow.getMonth();
+  cYear    = curYear; cMonth = curMonth;
+
+  const jsDay = loginNow.getDay(); // 0=Sun, 6=Sat
+  if(jsDay === 0 || jsDay === 6){
+    // weekend → jump to next Monday
+    const nextMon = new Date(loginNow);
+    nextMon.setDate(loginNow.getDate() + (jsDay === 0 ? 1 : 2));
+    curYear  = nextMon.getFullYear();
+    curMonth = nextMon.getMonth();
+    cYear    = curYear; cMonth = curMonth;
+    curWeek  = findTodayWeek(curYear, curMonth, nextMon.getDate());
+    curDay   = 0; // Monday
   } else {
-    // land on the week containing June 29 2026, day = Monday (index 0)
-    curWeek=findTodayWeek(START_YEAR,START_MONTH,29);
-    curDay=0; cWeek=curWeek; cDay=0;
+    curWeek = findTodayWeek(curYear, curMonth, loginNow.getDate());
+    curDay  = jsDay - 1; // Mon=0 ... Fri=4
   }
+  cWeek = curWeek; cDay = curDay;
 
   document.getElementById('app').classList.add('show');
   renderMyTab();
