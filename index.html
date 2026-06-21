@@ -2,8 +2,20 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>OR Schedule · KSH</title>
+
+<!-- iOS Add to Home Screen -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OR KSH">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
+
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -315,6 +327,28 @@ button,select,input{font-family:inherit;}
       <label class="form-label">Operation</label>
       <select class="fsel" id="fOp" onchange="onOpSel()"></select>
       <input class="finput" id="fOpCustom" type="text" placeholder="พิมพ์ชื่อ operation...">
+      <select class="finput" id="fOpSide" style="display:none;">
+        <option value="">— เลือกข้าง —</option>
+        <option value="ซ้าย (Lt.)">ซ้าย (Lt.)</option>
+        <option value="ขวา (Rt.)">ขวา (Rt.)</option>
+        <option value="Bilateral">Bilateral</option>
+      </select>
+      <div id="fOpLTCWrap" style="display:none;margin-top:8px;">
+        <label style="display:flex;align-items:center;gap:7px;font-size:.85rem;color:var(--text);cursor:pointer;">
+          <input type="checkbox" id="fOpLTC" style="width:16px;height:16px;cursor:pointer;">
+          with TR
+        </label>
+      </div>
+      <div id="fOpTAHWrap" style="display:none;margin-top:8px;gap:16px;">
+        <label style="display:flex;align-items:center;gap:7px;font-size:.85rem;color:var(--text);cursor:pointer;">
+          <input type="checkbox" id="fOpTAHBS" onchange="onTAHCheck('BS')" style="width:16px;height:16px;cursor:pointer;">
+          with BS
+        </label>
+        <label style="display:flex;align-items:center;gap:7px;font-size:.85rem;color:var(--text);cursor:pointer;">
+          <input type="checkbox" id="fOpTAHBSO" onchange="onTAHCheck('BSO')" style="width:16px;height:16px;cursor:pointer;">
+          with BSO
+        </label>
+      </div>
     </div>
     <div class="form-row">
       <label class="form-label">ช่วงเวลา</label>
@@ -383,7 +417,7 @@ const DEPT_NAMES={obstetrics:"OB-GYN",surgery:"ศัลยกรรม",orthope
 const DEPT_COLORS={obstetrics:"#f78166",surgery:"#58a6ff",orthopedics:"#3fb950",ophthalmology:"#e3b341",neurosurgery:"#d2a8ff",maxillo:"#79c0ff"};
 const DEPT_BG={obstetrics:"rgba(247,129,102,.15)",surgery:"rgba(88,166,255,.15)",orthopedics:"rgba(63,185,80,.15)",ophthalmology:"rgba(227,179,65,.15)",neurosurgery:"rgba(210,168,255,.15)",maxillo:"rgba(121,192,255,.15)"};
 const DEPT_OPS={
-  obstetrics:["Cesarean section","Hysterectomy","Myomectomy","Ovarian cystectomy","Salpingectomy","MVA","D&C","Cervical conization","Tubal ligation","Endometrial biopsy","อื่นๆ (พิมพ์เอง)"],
+  obstetrics:["LT C/S","TAH","Explore lap ovarian cystectomy","Explore lap salpingectomy","Transabdominal myomectomy","Transvaginal myomectomy","MVA","D&C","F&C","LEEP","TR","อื่นๆ (พิมพ์เอง)"],
   surgery:["Appendectomy","Cholecystectomy","Herniorrhaphy","Colostomy","Gastrectomy","Splenectomy","Thyroidectomy","Bowel resection","อื่นๆ (พิมพ์เอง)"],
   orthopedics:["ORIF femur","THR","TKR","ACL repair","Laminectomy","Spine fusion","Arthroscopy","Amputation","อื่นๆ (พิมพ์เอง)"],
   ophthalmology:["PE + IOL","Ptx","IVT","Blepharoplasty","PPV","อื่นๆ (พิมพ์เอง)"],
@@ -400,7 +434,7 @@ const VIEWER_USER={
   names:[], dept:"surgery", isViewer:true,
   slots:[]
 };
-const ALL_DOCTOR_NAMES=["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์","นพ.วีระพงศ์","นพ.พิษณุ","นพ.กันต์ชนะ","นพ.ภัทรพล","นพ.กฤษฎาภร","นพ.บุญยกร","พ.อารียา","พ.ฤทธ์","พญ.ทัชชา","นพ.จารุสิทธิ์","พญ.วิชญาพร","นพ.ธีรศักดิ์","นพ.ณัฐวัฒน์","พญ.ชัชฎาภรณ์","พญ.ณัฐนรี","พญ.ภคินี"];
+const ALL_DOCTOR_NAMES=["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์","นพ.วีระพงศ์","นพ.พิษณุ","นพ.กันต์ชนะ","นพ.ภัทรพล","นพ.กฤษฎาพร","นพ.บุญยกร","พ.อารียา","พ.ฤทธิ์","พญ.ทัชชา","นพ.จารุสิทธิ์","พญ.วิชญาพร","นพ.ธีรศักดิ์","นพ.ณัฐวัฒน์","พญ.ชัชฎาภรณ์","พญ.ณัฐนรี","พญ.ภคินี"];
 const ALL_ROOMS=["OR-1","OR-2","OR-3","OR-4"];
 const ALL_SESSIONS=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
 
@@ -414,15 +448,15 @@ const ADMIN_USER={
 };
 
 const DOCTORS=[
-  {id:"Ob1",password:"Ob1",names:["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์"],dept:"obstetrics",slots:[{room:"OR-1",day:0,session:"pm"},{room:"OR-3",day:1,session:"pm"},{room:"OR-2",day:2,session:"am"},{room:"OR-1",day:2,session:"pm"},{room:"OR-3",day:3,session:"am"},{room:"OR-2",day:4,session:"pm"}]},
-  {id:"Ob2",password:"Ob2",names:["นพ.วีระพงศ์"],dept:"obstetrics",slots:[{room:"OR-1",day:0,session:"am"},{room:"OR-1",day:4,session:"am"}]},
+  {id:"Ob1",password:"Ob1",names:["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์"],dept:"obstetrics",slots:[{room:"OR-3",day:0,session:"pm"},{room:"OR-3",day:1,session:"pm"},{room:"OR-2",day:2,session:"am"},{room:"OR-1",day:2,session:"pm"},{room:"OR-3",day:3,session:"am"},{room:"OR-2",day:4,session:"pm"}]},
+  {id:"Ob2",password:"Ob2",names:["นพ.วีระพงศ์"],dept:"obstetrics",slots:[{room:"OR-3",day:0,session:"am"},{room:"OR-1",day:4,session:"am"}]},
   {id:"Ob3",password:"Ob3",names:["นพ.พิษณุ"],dept:"obstetrics",slots:[{room:"OR-2",day:0,session:"pm"},{room:"OR-2",day:4,session:"am"}]},
   {id:"NSx",password:"NSx",names:["นพ.กันต์ชนะ"],dept:"neurosurgery",slots:[{room:"OR-2",day:0,session:"am"}]},
   {id:"Ot1",password:"Ot1",names:["นพ.ภัทรพล"],dept:"orthopedics",slots:[{room:"OR-2",day:1,session:"am"},{room:"OR-2",day:1,session:"pm"}]},
-  {id:"Ot2",password:"Ot2",names:["นพ.กฤษฎาภร"],dept:"orthopedics",slots:[{room:"OR-2",day:3,session:"am"},{room:"OR-2",day:3,session:"pm"}]},
+  {id:"Ot2",password:"Ot2",names:["นพ.กฤษฎาพร"],dept:"orthopedics",slots:[{room:"OR-2",day:3,session:"am"},{room:"OR-2",day:3,session:"pm"}]},
   {id:"Ot3",password:"Ot3",names:["นพ.บุญยกร"],dept:"orthopedics",slots:[{room:"OR-3",day:4,session:"am"},{room:"OR-3",day:4,session:"pm"}]},
-  {id:"Ot4",password:"Ot4",names:["พ.อารียา"],dept:"orthopedics",slots:[{room:"OR-3",day:0,session:"am"},{room:"OR-3",day:0,session:"pm"}]},
-  {id:"Ot5",password:"Ot5",names:["พ.ฤทธ์"],dept:"orthopedics",slots:[{room:"OR-3",day:0,session:"pm"},{room:"OR-2",day:2,session:"pm"}]},
+  {id:"Ot4",password:"Ot4",names:["พ.อารียา"],dept:"orthopedics",slots:[{room:"OR-1",day:0,session:"am"},{room:"OR-1",day:0,session:"pm"}]},
+  {id:"Ot5",password:"Ot5",names:["พ.ฤทธิ์"],dept:"orthopedics",slots:[{room:"OR-1",day:0,session:"pm"},{room:"OR-2",day:2,session:"pm"}]},
   {id:"Sx1",password:"Sx1",names:["พญ.ทัชชา"],dept:"surgery",slots:[{room:"OR-3",day:1,session:"am"},{room:"OR-3",day:2,session:"am"},{room:"OR-3",day:2,session:"pm"}]},
   {id:"Sx2",password:"Sx2",names:["นพ.จารุสิทธิ์"],dept:"surgery",slots:[{room:"OR-1",day:3,session:"am"},{room:"OR-1",day:3,session:"pm"}]},
   {id:"Sx3",password:"Sx3",names:["พญ.วิชญาพร"],dept:"surgery",slots:[{room:"OR-1",day:2,session:"am"},{room:"OR-3",day:3,session:"pm"}]},
@@ -824,9 +858,17 @@ function openAdd(room,session){
   document.getElementById('btnDel').style.display='none';
   document.getElementById('modalConflict').classList.remove('show');
   document.getElementById('fOpCustom').style.display='none';
+  document.getElementById('fOpSide').style.display='none';
+  document.getElementById('fOpSide').value='';
+  document.getElementById('fOpLTCWrap').style.display='none';
+  document.getElementById('fOpLTC').checked=false;
+  document.getElementById('fOpTAHWrap').style.display='none';
+  document.getElementById('fOpTAHBS').checked=false;
+  document.getElementById('fOpTAHBSO').checked=false;
   document.getElementById('fDiag').value='';
   document.getElementById('fRemark').value='';
   buildOpSelect();
+  onOpSel();
   onTimeChange();
   document.getElementById('overlay').classList.remove('hidden');
 }
@@ -875,28 +917,94 @@ function buildOpSelect(){
   const ops=DEPT_OPS[dept]||[];
   document.getElementById('fOp').innerHTML=ops.map(o=>`<option value="${o}">${o}</option>`).join('');
   document.getElementById('fOpCustom').style.display='none';
+  document.getElementById('fOpSide').style.display='none';
+  document.getElementById('fOpSide').value='';
+  document.getElementById('fOpLTCWrap').style.display='none';
+  document.getElementById('fOpLTC').checked=false;
+  document.getElementById('fOpTAHWrap').style.display='none';
+  document.getElementById('fOpTAHBS').checked=false;
+  document.getElementById('fOpTAHBSO').checked=false;
 }
 function onDocChange(){
-  if(currentUser.isAdmin) buildOpSelect();
+  if(currentUser.isAdmin){ buildOpSelect(); onOpSel(); }
   checkConflict();
+}
+const SIDE_REQUIRED_OPS=["Explore lap ovarian cystectomy","Explore lap salpingectomy"];
+function onTAHCheck(which){
+  if(which==='BS' && document.getElementById('fOpTAHBS').checked){
+    document.getElementById('fOpTAHBSO').checked=false;
+  }
+  if(which==='BSO' && document.getElementById('fOpTAHBSO').checked){
+    document.getElementById('fOpTAHBS').checked=false;
+  }
 }
 function onOpSel(){
   const v=document.getElementById('fOp').value;
   const isCustom=v==='อื่นๆ (พิมพ์เอง)';
+  const needsSide=SIDE_REQUIRED_OPS.includes(v);
+  const isLTC=v==='LT C/S';
+  const isTAH=v==='TAH';
   document.getElementById('fOpCustom').style.display=isCustom?'block':'none';
+  document.getElementById('fOpSide').style.display=needsSide?'block':'none';
+  document.getElementById('fOpLTCWrap').style.display=isLTC?'block':'none';
+  document.getElementById('fOpTAHWrap').style.display=isTAH?'flex':'none';
   if(isCustom){document.getElementById('fOpCustom').value='';document.getElementById('fOpCustom').focus();}
+  if(!needsSide){document.getElementById('fOpSide').value='';}
+  if(!isLTC){document.getElementById('fOpLTC').checked=false;}
+  if(!isTAH){document.getElementById('fOpTAHBS').checked=false;document.getElementById('fOpTAHBSO').checked=false;}
 }
 function getOpVal(){
   const v=document.getElementById('fOp').value;
   if(v==='อื่นๆ (พิมพ์เอง)'){const c=document.getElementById('fOpCustom').value.trim();return c||null;}
+  if(SIDE_REQUIRED_OPS.includes(v)){
+    const side=document.getElementById('fOpSide').value;
+    if(!side) return null;
+    return `${v} (${side})`;
+  }
+  if(v==='LT C/S'){
+    return document.getElementById('fOpLTC').checked ? 'LT C/S with TR' : 'LT C/S';
+  }
+  if(v==='TAH'){
+    if(document.getElementById('fOpTAHBS').checked) return 'TAH with BS';
+    if(document.getElementById('fOpTAHBSO').checked) return 'TAH with BSO';
+    return 'TAH';
+  }
   return v;
 }
 function setOpVal(val){
   const dept=currentUser.isAdmin?getDeptFromDoctor(document.getElementById('fDoc').value):currentUser.dept;
   const ops=DEPT_OPS[dept]||[];
   const sel=document.getElementById('fOp');
-  if(ops.includes(val)){sel.value=val;document.getElementById('fOpCustom').style.display='none';}
-  else{sel.value='อื่นๆ (พิมพ์เอง)';document.getElementById('fOpCustom').style.display='block';document.getElementById('fOpCustom').value=val;}
+  document.getElementById('fOpSide').style.display='none';
+  document.getElementById('fOpLTCWrap').style.display='none';
+  document.getElementById('fOpTAHWrap').style.display='none';
+  // check if val matches a side-required op with a side suffix, e.g. "Explore lap ovarian cystectomy (ซ้าย (Lt.))"
+  const sideMatch=SIDE_REQUIRED_OPS.find(base=>val.startsWith(base+' ('));
+  if(sideMatch){
+    sel.value=sideMatch;
+    document.getElementById('fOpCustom').style.display='none';
+    document.getElementById('fOpSide').style.display='block';
+    const extractedSide=val.slice(sideMatch.length+2,-1);
+    document.getElementById('fOpSide').value=extractedSide;
+  } else if(val==='LT C/S' || val==='LT C/S with TR'){
+    sel.value='LT C/S';
+    document.getElementById('fOpCustom').style.display='none';
+    document.getElementById('fOpLTCWrap').style.display='block';
+    document.getElementById('fOpLTC').checked=(val==='LT C/S with TR');
+  } else if(val==='TAH' || val==='TAH with BS' || val==='TAH with BSO'){
+    sel.value='TAH';
+    document.getElementById('fOpCustom').style.display='none';
+    document.getElementById('fOpTAHWrap').style.display='flex';
+    document.getElementById('fOpTAHBS').checked=(val==='TAH with BS');
+    document.getElementById('fOpTAHBSO').checked=(val==='TAH with BSO');
+  } else if(ops.includes(val)){
+    sel.value=val;
+    document.getElementById('fOpCustom').style.display='none';
+  } else {
+    sel.value='อื่นๆ (พิมพ์เอง)';
+    document.getElementById('fOpCustom').style.display='block';
+    document.getElementById('fOpCustom').value=val;
+  }
 }
 
 function buildTimeSelects(session,defS,defE){
@@ -1117,7 +1225,12 @@ function saveOp(){
   const s=getStartMin(),e=getEndMin();
   if(e<=s){alert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม');return;}
   const opVal=getOpVal();
-  if(!opVal){alert('กรุณาระบุชื่อ operation');return;}
+  if(!opVal){
+    const opSelVal=document.getElementById('fOp').value;
+    if(SIDE_REQUIRED_OPS.includes(opSelVal)) alert('กรุณาเลือกข้าง (ซ้าย/ขวา/Bilateral)');
+    else alert('กรุณาระบุชื่อ operation');
+    return;
+  }
   const diag=document.getElementById('fDiag').value.trim();
   const remark=document.getElementById('fRemark').value.trim();
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
