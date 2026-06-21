@@ -60,7 +60,7 @@ button,select,input{font-family:inherit;}
 /* ── MAIN LAYOUT ── */
 .app{display:none;}
 .app.show{display:block;}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;flex-shrink:0;}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;flex-shrink:0;}
 .topbar-left{display:flex;align-items:center;gap:12px;}
 .dept-badge{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid var(--dc);background:var(--db);color:var(--dc);}
 .topbar-title{font-size:1rem;font-weight:700;}
@@ -537,18 +537,27 @@ function setConn(ok){
 // ── LOGIN / LOGOUT ───────────────────────────────────
 function doLogin(){
   const pw=document.getElementById('pwInput').value.trim();
+  attemptLogin(pw, true);
+}
+function attemptLogin(pw, isManual){
   // check admin and viewer first
   let doc = pw===ADMIN_USER.password ? ADMIN_USER
           : pw===VIEWER_USER.password ? VIEWER_USER
           : DOCTORS.find(d=>d.password===pw);
   if(!doc){
-    document.getElementById('pwErr').textContent='❌ รหัสผ่านไม่ถูกต้อง';
-    document.getElementById('pwInput').value='';
-    document.getElementById('pwInput').focus();
-    setTimeout(()=>document.getElementById('pwErr').textContent='',2500);
+    if(isManual){
+      document.getElementById('pwErr').textContent='❌ รหัสผ่านไม่ถูกต้อง';
+      document.getElementById('pwInput').value='';
+      document.getElementById('pwInput').focus();
+      setTimeout(()=>document.getElementById('pwErr').textContent='',2500);
+    } else {
+      // saved password no longer valid — clear it and show login screen
+      try{ localStorage.removeItem('or-saved-pw'); }catch(e){}
+    }
     return;
   }
   currentUser=doc;
+  try{ localStorage.setItem('or-saved-pw', pw); }catch(e){}
   document.getElementById('pwInput').value='';
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('loadingScreen').style.display='flex';
@@ -558,9 +567,19 @@ function doLogin(){
 }
 function doLogout(){
   currentUser=null;opsData={};
+  try{ localStorage.removeItem('or-saved-pw'); }catch(e){}
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginWrap').style.display='flex';
 }
+
+// ── AUTO LOGIN (remember last session) ───────────────
+function tryAutoLogin(){
+  try{
+    const saved=localStorage.getItem('or-saved-pw');
+    if(saved){ attemptLogin(saved, false); }
+  }catch(e){}
+}
+tryAutoLogin();
 
 // ── LOAD DATA ────────────────────────────────────────
 async function loadAllData(){
