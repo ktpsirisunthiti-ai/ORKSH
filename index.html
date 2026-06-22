@@ -1166,8 +1166,7 @@ function getOpVal(){
   if(v==='อื่นๆ (พิมพ์เอง)'){const c=document.getElementById('fOpCustom').value.trim();return c||null;}
   if(SIDE_REQUIRED_OPS.includes(v)){
     const side=document.getElementById('fOpSide').value;
-    if(!side) return null;
-    return `${v} (${side})`;
+    return side ? `${v} (${side})` : v;
   }
   if(v==='LT C/S'){
     return document.getElementById('fOpLTC').checked ? 'LT C/S with TR' : 'LT C/S';
@@ -1208,6 +1207,10 @@ function setOpVal(val){
   } else if(ops.includes(val)){
     sel.value=val;
     document.getElementById('fOpCustom').style.display='none';
+    if(SIDE_REQUIRED_OPS.includes(val)){
+      document.getElementById('fOpSide').style.display='block';
+      document.getElementById('fOpSide').value='';
+    }
   } else {
     sel.value='อื่นๆ (พิมพ์เอง)';
     document.getElementById('fOpCustom').style.display='block';
@@ -1496,9 +1499,7 @@ function saveOp(){
   if(e<=s){alert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม');return;}
   const opVal=getOpVal();
   if(!opVal){
-    const opSelVal=document.getElementById('fOp').value;
-    if(SIDE_REQUIRED_OPS.includes(opSelVal)) alert('กรุณาเลือกข้าง (ซ้าย/ขวา/Bilateral)');
-    else alert('กรุณาระบุชื่อ operation');
+    alert('กรุณาระบุชื่อ operation');
     return;
   }
 
