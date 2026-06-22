@@ -21,12 +21,12 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--border2:#3d4550;
-  --text:#e6edf3;--muted:#7d8590;--muted2:#9198a1;
+  --text:#e6edf3;--muted:#7d8590;--muted2:#9198a1;--text-strong:#f5f7fa;
   --warn:#e3b341;--warnbg:rgba(227,179,65,.12);
 }
 body.light-mode{
   --bg:#f5f7fa;--surface:#ffffff;--surface2:#eef1f5;--border:#d0d7de;--border2:#b0bbc8;
-  --text:#1a1f2e;--muted:#6b7280;--muted2:#4b5563;
+  --text:#1a1f2e;--muted:#6b7280;--muted2:#4b5563;--text-strong:#000000;
   --warn:#b45309;--warnbg:rgba(180,83,9,.08);
 }
 body,*{transition:background-color .2s,border-color .2s,color .2s;}
@@ -106,11 +106,23 @@ button,select,input{font-family:inherit;}
 .slot-body{padding:10px 14px;min-height:54px;}
 
 /* ── OP ITEM ── */
-.op-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px;margin-bottom:6px;cursor:pointer;border-left:3px solid var(--dc,#58a6ff);transition:filter .1s;}
+.op-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:7px;margin-bottom:6px;cursor:pointer;border-left:3px solid var(--dc,#58a6ff);transition:filter .1s;position:relative;}
 .op-item:hover{filter:brightness(1.15);}
 .op-item:last-child{margin-bottom:0;}
 .op-info{flex:1;min-width:0;}
-.op-name{font-size:.85rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.op-name{font-size:.9rem;font-weight:700;color:var(--text-strong,#0d1117);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.urgency-btn{flex:1;padding:8px 4px;border:1.5px solid var(--border2);border-radius:7px;background:var(--surface2);color:var(--muted);cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s;}
+.urgency-btn.active[data-val="elective"]{border-color:#3fb950;background:rgba(63,185,80,.15);color:#3fb950;}
+.urgency-btn.active[data-val="urgent"]{border-color:#e3b341;background:rgba(227,179,65,.15);color:#e3b341;}
+.urgency-btn.active[data-val="emergency"]{border-color:#f78166;background:rgba(247,129,102,.15);color:#f78166;}
+.urgency-badge{position:absolute;top:6px;right:8px;font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:5px;text-transform:uppercase;letter-spacing:.03em;}
+.urgency-badge.elective{background:rgba(63,185,80,.18);color:#3fb950;border:1px solid #3fb950;}
+.urgency-badge.urgent{background:rgba(227,179,65,.18);color:#e3b341;border:1px solid #e3b341;}
+.urgency-badge.emergency{background:rgba(247,129,102,.18);color:#f78166;border:1px solid #f78166;}
+.urgency-badge-sm{position:absolute;top:4px;right:6px;font-size:.55rem;font-weight:800;padding:1px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:.02em;}
+.urgency-badge-sm.elective{background:rgba(63,185,80,.18);color:#3fb950;border:1px solid #3fb950;}
+.urgency-badge-sm.urgent{background:rgba(227,179,65,.18);color:#e3b341;border:1px solid #e3b341;}
+.urgency-badge-sm.emergency{background:rgba(247,129,102,.18);color:#f78166;border:1px solid #f78166;}
 .op-meta{font-size:.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
 .op-doc{font-size:.75rem;color:var(--dc,#58a6ff);font-weight:600;}
 .add-btn{width:100%;padding:8px;border:1px dashed var(--border2);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;font-size:.82rem;text-align:center;transition:all .15s;margin-top:4px;}
@@ -135,10 +147,10 @@ button,select,input{font-family:inherit;}
 .cv-session{padding:8px 12px;border-right:1px solid var(--border);}
 .cv-session:last-child{border-right:none;}
 .cv-sess-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-.cv-op{padding:5px 8px;border-radius:5px;margin-bottom:4px;border-left:3px solid;font-size:.75rem;}
+.cv-op{padding:5px 8px;border-radius:5px;margin-bottom:4px;border-left:3px solid;font-size:.75rem;position:relative;}
 .cv-op:last-child{margin-bottom:0;}
 .cv-op-doc{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cv-op-name{color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cv-op-name{color:var(--text-strong,#0d1117);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cv-empty{font-size:.72rem;color:var(--border2);font-style:italic;}
 
 /* ── AUDIT LOG ── */
@@ -171,6 +183,32 @@ button,select,input{font-family:inherit;}
 .btn-primary{padding:8px 16px;border:none;border-radius:7px;background:#58a6ff;color:#0d1117;font-weight:700;cursor:pointer;font-size:.83rem;}
 .btn-cancel{padding:8px 12px;border:1px solid var(--border2);border-radius:7px;background:transparent;color:var(--muted2);cursor:pointer;font-size:.83rem;}
 .btn-delete{padding:8px 12px;border:none;border-radius:7px;background:var(--warnbg);color:var(--warn);cursor:pointer;font-size:.83rem;margin-right:auto;}
+/* ── PRINT VIEW ── */
+#printArea{display:none;}
+@media print{
+  body{background:#fff !important;color:#000 !important;padding:0;}
+  .login-wrap,.loading-screen,.topbar,.tab-bar,.overlay,.controls,.app>.tab-content{display:none !important;}
+  #printArea{display:block !important;background:#fff;color:#000;padding:0;}
+  #printArea *{color:#000 !important;}
+  .pr-header{text-align:center;margin-bottom:14px;border-bottom:2px solid #000;padding-bottom:10px;}
+  .pr-title{font-size:20px;font-weight:800;margin-bottom:2px;}
+  .pr-sub{font-size:13px;}
+  .pr-room{margin-bottom:12px;page-break-inside:avoid;}
+  .pr-room-title{font-size:15px;font-weight:800;background:#eee !important;padding:5px 10px;border:1px solid #000;}
+  .pr-sessions{display:grid;grid-template-columns:1fr 1fr;border:1px solid #000;border-top:none;}
+  .pr-sess{padding:8px 10px;border-right:1px solid #000;}
+  .pr-sess:last-child{border-right:none;}
+  .pr-sess-label{font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px;border-bottom:1px solid #999;padding-bottom:3px;}
+  .pr-op{padding:5px 0;border-bottom:1px dashed #ccc;font-size:12px;}
+  .pr-op:last-child{border-bottom:none;}
+  .pr-op-top{display:flex;justify-content:space-between;align-items:baseline;}
+  .pr-op-doc{font-weight:800;font-size:12.5px;}
+  .pr-op-urg{font-size:9px;font-weight:800;padding:1px 5px;border:1px solid #000;border-radius:3px;text-transform:uppercase;}
+  .pr-op-diag{font-style:italic;font-size:10.5px;color:#333 !important;}
+  .pr-op-name{font-weight:700;font-size:12px;}
+  .pr-op-time{font-size:10.5px;font-family:monospace;}
+  .pr-empty{font-size:11px;font-style:italic;color:#999 !important;}
+}
 </style>
 </head>
 <body>
@@ -265,6 +303,16 @@ button,select,input{font-family:inherit;}
         <div class="ctrl-label">วัน</div>
         <div id="dayBtnsC" class="pill-row"></div>
       </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">ความเร่งด่วน</div>
+        <select class="fsel" id="centralUrgencyFilter" onchange="renderCentralTab()" style="min-width:140px;">
+          <option value="all">ทั้งหมด</option>
+          <option value="elective">Elective</option>
+          <option value="urgent">Urgent</option>
+          <option value="emergency">Emergency</option>
+        </select>
+      </div>
+      <button class="btn-ghost" onclick="printCentralView()">🖨 พิมพ์ตาราง</button>
     </div>
     <div id="centralGrid" class="central-grid"></div>
   </div>
@@ -309,8 +357,43 @@ button,select,input{font-family:inherit;}
       <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">🔍 บันทึกการเปลี่ยนแปลงทั้งหมด</div>
       <button class="btn-ghost" onclick="clearAuditLog()" style="font-size:.75rem;color:#f78166;border-color:#f78166;">🗑 ล้าง Log</button>
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end;">
+      <div class="ctrl-group">
+        <div class="ctrl-label">User</div>
+        <select class="fsel" id="logUserFilter" onchange="renderAuditLogFiltered()" style="min-width:140px;">
+          <option value="all">ทุกคน</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">ตั้งแต่วันที่</div>
+        <input type="date" class="fsel" id="logDateFrom" onchange="renderAuditLogFiltered()" style="min-width:140px;">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">ถึงวันที่</div>
+        <input type="date" class="fsel" id="logDateTo" onchange="renderAuditLogFiltered()" style="min-width:140px;">
+      </div>
+      <button class="btn-ghost" onclick="resetAuditLogFilter()">↺ รีเซ็ต (7 วันล่าสุด)</button>
+    </div>
     <div id="auditLogList"></div>
   </div>
+
+<!-- PRINT-ONLY AREA -->
+<div id="printArea"></div>
+
+<!-- CASE LIMIT WARNING -->
+<div class="overlay hidden" id="caseLimitOverlay" style="z-index:200;">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-title" style="color:var(--warn);">⚠️ คำเตือนจำนวนเคส</div>
+    <div style="font-size:.88rem;color:var(--text);line-height:1.7;margin-bottom:20px;">
+      หากผ่าตัดเกินเวลาที่กำหนดไว้ เคสอาจถูกเลื่อนหรือยกเลิกเพื่อไม่ให้กระทบนอกเวลาราชการ กรุณายืนยันว่าทราบและยอมรับเงื่อนไขนี้
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCaseLimitWarning()">ยกเลิก</button>
+      <button class="btn-primary" onclick="confirmCaseLimitWarning()">ยอมรับและบันทึก</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay hidden" id="overlay">
   <div class="modal">
     <div class="modal-title" id="modalTitle">➕ เพิ่ม Operation<span class="modal-sub" id="modalSub"></span></div>
@@ -348,6 +431,14 @@ button,select,input{font-family:inherit;}
           <input type="checkbox" id="fOpTAHBSO" onchange="onTAHCheck('BSO')" style="width:16px;height:16px;cursor:pointer;">
           with BSO
         </label>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">ความเร่งด่วน</label>
+      <div id="fUrgencyBtns" style="display:flex;gap:8px;">
+        <button type="button" class="urgency-btn" data-val="elective" onclick="selectUrgency('elective')">Elective</button>
+        <button type="button" class="urgency-btn" data-val="urgent" onclick="selectUrgency('urgent')">Urgent</button>
+        <button type="button" class="urgency-btn" data-val="emergency" onclick="selectUrgency('emergency')">Emergency</button>
       </div>
     </div>
     <div class="form-row">
@@ -447,6 +538,22 @@ const ADMIN_USER={
   slots:[0,1,2,3,4].flatMap(d=>ALL_ROOMS.flatMap(room=>["am","pm"].map(session=>({room,day:d,session}))))
 };
 
+// Additional admin-equivalent users — same full access as ADMIN_USER
+const SC01_USER={
+  id:"Sc01", password:"Sc01",
+  names:ALL_DOCTOR_NAMES,
+  dept:"surgery",
+  isAdmin:true,
+  slots:[0,1,2,3,4].flatMap(d=>ALL_ROOMS.flatMap(room=>["am","pm"].map(session=>({room,day:d,session}))))
+};
+const AN01_USER={
+  id:"An01", password:"An01",
+  names:ALL_DOCTOR_NAMES,
+  dept:"surgery",
+  isAdmin:true,
+  slots:[0,1,2,3,4].flatMap(d=>ALL_ROOMS.flatMap(room=>["am","pm"].map(session=>({room,day:d,session}))))
+};
+
 const DOCTORS=[
   {id:"Ob1",password:"Ob1",names:["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์"],dept:"obstetrics",slots:[{room:"OR-3",day:0,session:"pm"},{room:"OR-3",day:1,session:"pm"},{room:"OR-2",day:2,session:"am"},{room:"OR-1",day:2,session:"pm"},{room:"OR-3",day:3,session:"am"},{room:"OR-2",day:4,session:"pm"}]},
   {id:"Ob2",password:"Ob2",names:["นพ.วีระพงศ์"],dept:"obstetrics",slots:[{room:"OR-3",day:0,session:"am"},{room:"OR-1",day:4,session:"am"}]},
@@ -468,7 +575,7 @@ const DOCTORS=[
 ];
 
 // ── STATE ─────────────────────────────────────────────
-let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null;
+let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null, selUrgency='elective';
 
 // Start from today June 9 2026
 const _now=new Date();
@@ -542,6 +649,8 @@ function doLogin(){
 function attemptLogin(pw, isManual){
   // check admin and viewer first
   let doc = pw===ADMIN_USER.password ? ADMIN_USER
+          : pw===SC01_USER.password ? SC01_USER
+          : pw===AN01_USER.password ? AN01_USER
           : pw===VIEWER_USER.password ? VIEWER_USER
           : DOCTORS.find(d=>d.password===pw);
   if(!doc){
@@ -603,7 +712,7 @@ async function loadAllData(){
   document.getElementById('deptBadge').style.borderColor=dc;
   document.getElementById('deptBadge').style.background=db;
   document.getElementById('deptBadge').style.color=dc;
-  document.getElementById('topTitle').textContent=currentUser.isAdmin?'ผู้ดูแลระบบ':currentUser.isViewer?'View Only':currentUser.names.join(' · ');
+  document.getElementById('topTitle').textContent=currentUser.isAdmin?`ผู้ดูแลระบบ (${currentUser.id})`:currentUser.isViewer?'View Only':currentUser.names.join(' · ');
 
   // hide "ตารางของฉัน" and history tab for viewer
   document.getElementById('tabMy').style.display=currentUser.isViewer?'none':'block';
@@ -777,8 +886,11 @@ function renderMyTab(){
       slotOps.forEach(op=>{
         const conflict=ops.some(o=>o.id!==op.id&&o.doctor===op.doctor&&overlaps(op,o));
         const bc=conflict?'#e3b341':dc;
+        const urg=op.urgency||'elective';
+        const urgLabel=urg==='emergency'?'Emergency':urg==='urgent'?'Urgent':'Elective';
         html+=`<div class="op-item" style="border-left-color:${bc}" onclick="openEdit('${op.id}','${sl.room}','${sl.session}')">
-          <div class="op-info">
+          <span class="urgency-badge ${urg}">${urgLabel}</span>
+          <div class="op-info" style="padding-right:70px;">
             <div class="op-doc" style="color:${bc}">${op.doctor}</div>
             ${op.diagnosis?`<div class="op-meta" style="color:var(--muted2);font-style:italic;">${op.diagnosis}</div>`:''}
             <div class="op-name">${op.op}</div>
@@ -824,7 +936,11 @@ async function renderCentralTab(){
   document.getElementById('dayBtnsC').innerHTML=buildDayNav(cYear,cMonth,cWeek,cDay,'setDayC');
 
   const key=`${cYear}_${cMonth}_${cWeek}_${cDay}`;
-  const ops=getOps(key);
+  let ops=getOps(key);
+  const urgFilter=document.getElementById('centralUrgencyFilter').value;
+  if(urgFilter!=='all'){
+    ops=ops.filter(o=>(o.urgency||'elective')===urgFilter);
+  }
   const rooms=["OR-1","OR-2","OR-3","OR-4"];
   const sessions=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
   const dt=getDate(cYear,cMonth,cWeek,cDay);
@@ -833,7 +949,11 @@ async function renderCentralTab(){
   rooms.forEach(room=>{
     html+=`<div class="cv-room"><div class="cv-room-header">${room}</div><div class="cv-sessions">`;
     sessions.forEach(sess=>{
-      const sOps=ops.filter(o=>o.room===room&&o.session===sess.id).sort((a,b)=>a.startMin-b.startMin);
+      const urgRank={emergency:0,urgent:1,elective:2};
+      const sOps=ops.filter(o=>o.room===room&&o.session===sess.id).sort((a,b)=>{
+        const ra=urgRank[a.urgency||'elective'], rb=urgRank[b.urgency||'elective'];
+        return ra!==rb ? ra-rb : a.startMin-b.startMin;
+      });
       const st=SESSION_TIMES[sess.id];
       html+=`<div class="cv-session">
         <div class="cv-sess-label">${sess.label} ${minToTime(st.start)}–${minToTime(st.end)}</div>`;
@@ -843,12 +963,17 @@ async function renderCentralTab(){
         sOps.forEach(op=>{
           const dc=DEPT_COLORS[getDeptFromDoctor(op.doctor)]||'#58a6ff';
           const db=DEPT_BG[getDeptFromDoctor(op.doctor)]||'rgba(88,166,255,.15)';
+          const urg=op.urgency||'elective';
+          const urgLabel=urg==='emergency'?'Emerg.':urg==='urgent'?'Urgent':'Elect.';
           html+=`<div class="cv-op" style="border-left-color:${dc};background:${db}">
-            <div class="cv-op-doc" style="color:${dc}">${op.doctor}</div>
-            ${op.diagnosis?`<div style="font-size:.65rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${op.diagnosis}</div>`:''}
-            <div class="cv-op-name">${op.op}</div>
-            <div style="font-size:.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
-            ${op.remark?`<div style="font-size:.65rem;color:var(--warn);margin-top:2px;">📝 ${op.remark}</div>`:''}
+            <span class="urgency-badge-sm ${urg}">${urgLabel}</span>
+            <div style="padding-right:58px;">
+              <div class="cv-op-doc" style="color:${dc}">${op.doctor}</div>
+              ${op.diagnosis?`<div style="font-size:.65rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${op.diagnosis}</div>`:''}
+              <div class="cv-op-name">${op.op}</div>
+              <div style="font-size:.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
+              ${op.remark?`<div style="font-size:.65rem;color:var(--warn);margin-top:2px;">📝 ${op.remark}</div>`:''}
+            </div>
           </div>`;
         });
       }
@@ -864,6 +989,64 @@ function getDeptFromDoctor(name){
     if(doc.names.includes(name))return doc.dept;
   }
   return 'surgery';
+}
+
+// ── PRINT CENTRAL VIEW ─────────────────────────────────
+function printCentralView(){
+  const key=`${cYear}_${cMonth}_${cWeek}_${cDay}`;
+  let ops=getOps(key);
+  const urgFilter=document.getElementById('centralUrgencyFilter').value;
+  if(urgFilter!=='all'){
+    ops=ops.filter(o=>(o.urgency||'elective')===urgFilter);
+  }
+  const rooms=["OR-1","OR-2","OR-3","OR-4"];
+  const sessions=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
+  const dt=getDate(cYear,cMonth,cWeek,cDay);
+  const dateLabel=`วัน${DAYS[cDay]}ที่ ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;
+  const urgRank={emergency:0,urgent:1,elective:2};
+  const urgLabelMap={emergency:'Emergency',urgent:'Urgent',elective:'Elective'};
+
+  let html=`<div class="pr-header">
+    <div class="pr-title">🏥 ตารางรวม OR · KSH</div>
+    <div class="pr-sub">${dateLabel}${urgFilter!=='all'?' · กรอง: '+urgLabelMap[urgFilter]:''}</div>
+  </div>`;
+
+  rooms.forEach(room=>{
+    html+=`<div class="pr-room">
+      <div class="pr-room-title">${room}</div>
+      <div class="pr-sessions">`;
+    sessions.forEach(sess=>{
+      const st=SESSION_TIMES[sess.id];
+      const sOps=ops.filter(o=>o.room===room&&o.session===sess.id).sort((a,b)=>{
+        const ra=urgRank[a.urgency||'elective'], rb=urgRank[b.urgency||'elective'];
+        return ra!==rb ? ra-rb : a.startMin-b.startMin;
+      });
+      html+=`<div class="pr-sess">
+        <div class="pr-sess-label">${sess.label} ${minToTime(st.start)}–${minToTime(st.end)}</div>`;
+      if(!sOps.length){
+        html+=`<div class="pr-empty">ว่าง</div>`;
+      } else {
+        sOps.forEach(op=>{
+          const urg=op.urgency||'elective';
+          html+=`<div class="pr-op">
+            <div class="pr-op-top">
+              <span class="pr-op-doc">${op.doctor}</span>
+              <span class="pr-op-urg">${urgLabelMap[urg]}</span>
+            </div>
+            ${op.diagnosis?`<div class="pr-op-diag">${op.diagnosis}</div>`:''}
+            <div class="pr-op-name">${op.op}</div>
+            <div class="pr-op-time">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
+            ${op.remark?`<div class="pr-op-diag">📝 ${op.remark}</div>`:''}
+          </div>`;
+        });
+      }
+      html+=`</div>`;
+    });
+    html+=`</div></div>`;
+  });
+
+  document.getElementById('printArea').innerHTML=html;
+  window.print();
 }
 
 // ── MODAL ─────────────────────────────────────────────
@@ -886,6 +1069,7 @@ function openAdd(room,session){
   document.getElementById('fOpTAHBSO').checked=false;
   document.getElementById('fDiag').value='';
   document.getElementById('fRemark').value='';
+  buildUrgencyBtns('elective');
   buildOpSelect();
   onOpSel();
   onTimeChange();
@@ -902,6 +1086,7 @@ function openEdit(id,room,session){
   document.getElementById('fDoc').value=op.doctor;
   document.getElementById('fDiag').value=op.diagnosis||'';
   document.getElementById('fRemark').value=op.remark||'';
+  buildUrgencyBtns(op.urgency||'elective');
   document.getElementById('modalTitle').innerHTML=`✏️ แก้ไข Operation<span class="modal-sub">${room} · ${session==='am'?'เช้า':'บ่าย'}</span>`;
   document.getElementById('btnDel').style.display='block';
   checkConflict();onTimeChange();
@@ -949,6 +1134,18 @@ function onDocChange(){
   checkConflict();
 }
 const SIDE_REQUIRED_OPS=["Explore lap ovarian cystectomy","Explore lap salpingectomy"];
+function selectUrgency(val){
+  selUrgency=val;
+  document.querySelectorAll('.urgency-btn').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-val')===val);
+  });
+}
+function buildUrgencyBtns(val){
+  selUrgency=val||'elective';
+  document.querySelectorAll('.urgency-btn').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-val')===selUrgency);
+  });
+}
 function onTAHCheck(which){
   if(which==='BS' && document.getElementById('fOpTAHBS').checked){
     document.getElementById('fOpTAHBSO').checked=false;
@@ -1163,18 +1360,21 @@ function renderHistory(){
     const sessLabel=op.session==='am'?'☀ เช้า':'🌤 บ่าย';
     const statusIcon=isToday?'📍':isPast?'✅':'🔜';
     const isLast=idx===list.length-1;
-    html+=`<div style="padding:10px 16px;${isLast?'':'border-bottom:1px solid var(--border);'}display:flex;gap:10px;align-items:flex-start;cursor:pointer;"
+    const urg=op.urgency||'elective';
+    const urgLabel=urg==='emergency'?'Emergency':urg==='urgent'?'Urgent':'Elective';
+    html+=`<div style="padding:10px 16px;${isLast?'':'border-bottom:1px solid var(--border);'}display:flex;gap:10px;align-items:flex-start;cursor:pointer;position:relative;"
       onclick="jumpToDate(${op._y},${op._m},${op._w},${op._d})"
       onmouseenter="this.style.background='var(--surface2)'" onmouseleave="this.style.background=''">
+      <span class="urgency-badge-sm ${urg}" style="top:10px;right:16px;">${urgLabel}</span>
       <div style="flex-shrink:0;min-width:95px;">
         <div style="font-size:.72rem;font-weight:700;color:${isToday?dc:isPast?'var(--muted)':'var(--text)'};">${statusIcon} ${isToday?'วันนี้':dateStr}</div>
         <div style="font-size:.68rem;color:var(--muted);">${DAYS[op._d]} · ${sessLabel}</div>
         <div style="font-size:.68rem;color:var(--muted);font-family:monospace;">${op.room}</div>
       </div>
-      <div style="flex:1;border-left:3px solid ${isPast?'var(--border2)':dc};padding-left:10px;">
+      <div style="flex:1;border-left:3px solid ${isPast?'var(--border2)':dc};padding-left:10px;padding-right:75px;">
         <div style="font-size:.78rem;font-weight:700;color:${isPast?'var(--muted)':dc};">${op.doctor}</div>
         ${op.diagnosis?`<div style="font-size:.7rem;color:var(--muted2);font-style:italic;">${op.diagnosis}</div>`:''}
-        <div style="font-size:.85rem;font-weight:600;color:var(--text);">${op.op}</div>
+        <div style="font-size:.85rem;font-weight:700;color:var(--text-strong,#0d1117);">${op.op}</div>
         <div style="font-size:.7rem;color:var(--muted);font-family:monospace;">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
         ${op.remark?`<div style="font-size:.7rem;color:var(--warn);">📝 ${op.remark}</div>`:''}
       </div>
@@ -1206,32 +1406,88 @@ async function writeLog(action, detail){
   }catch(e){ /* non-critical */ }
 }
 
+let auditLogCache=[];
+
 async function renderAuditLog(){
   const list=document.getElementById('auditLogList');
   list.innerHTML=`<div style="color:var(--muted);font-size:.82rem;padding:16px 0;">กำลังโหลด...</div>`;
   try{
     const data=await fbGet('audit_log');
-    if(!data||!Object.keys(data).length){
-      list.innerHTML=`<div style="color:var(--muted);font-size:.82rem;padding:16px 0;text-align:center;">ยังไม่มีบันทึก</div>`;
-      return;
-    }
-    const entries=Object.values(data).sort((a,b)=>b.ts-a.ts); // newest first
-    const actionLabel={add:'เพิ่ม',edit:'แก้ไข',delete:'ลบ'};
-    const actionCls={add:'log-add',edit:'log-edit',delete:'log-delete'};
-    let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">`;
-    entries.forEach(e=>{
-      const d=new Date(e.ts);
-      const timeStr=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-      html+=`<div class="log-item">
-        <div class="log-time">${timeStr}</div>
-        <div class="log-action ${actionCls[e.action]||'log-edit'}">${actionLabel[e.action]||e.action}</div>
-        <div class="log-detail"><span class="log-user">${e.user}</span> · ${e.detail}</div>
-      </div>`;
-    });
-    list.innerHTML=html+'</div>';
+    auditLogCache = data ? Object.values(data) : [];
   }catch(err){
     list.innerHTML=`<div style="color:#f78166;font-size:.82rem;padding:16px 0;">โหลด log ไม่ได้</div>`;
+    return;
   }
+
+  // build user filter options
+  const userSel=document.getElementById('logUserFilter');
+  const users=[...new Set(auditLogCache.map(e=>e.user))].sort();
+  const prevUser=userSel.value;
+  userSel.innerHTML='<option value="all">ทุกคน</option>'+users.map(u=>`<option value="${u}">${u}</option>`).join('');
+  if(users.includes(prevUser)) userSel.value=prevUser;
+
+  // default date range: last 7 days (only set once, when fields are empty)
+  const fromEl=document.getElementById('logDateFrom');
+  const toEl=document.getElementById('logDateTo');
+  if(!fromEl.value && !toEl.value){
+    setAuditLogDefaultDates();
+  }
+
+  renderAuditLogFiltered();
+}
+
+function setAuditLogDefaultDates(){
+  const today=new Date();
+  const sevenDaysAgo=new Date();
+  sevenDaysAgo.setDate(today.getDate()-6); // today + 6 days back = 7 days total
+  document.getElementById('logDateTo').value=toDateInputVal(today);
+  document.getElementById('logDateFrom').value=toDateInputVal(sevenDaysAgo);
+}
+function toDateInputVal(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function resetAuditLogFilter(){
+  document.getElementById('logUserFilter').value='all';
+  setAuditLogDefaultDates();
+  renderAuditLogFiltered();
+}
+
+function renderAuditLogFiltered(){
+  const list=document.getElementById('auditLogList');
+  const userFilter=document.getElementById('logUserFilter').value;
+  const fromVal=document.getElementById('logDateFrom').value;
+  const toVal=document.getElementById('logDateTo').value;
+
+  const fromTs = fromVal ? new Date(fromVal+'T00:00:00').getTime() : null;
+  const toTs   = toVal   ? new Date(toVal+'T23:59:59').getTime()   : null;
+
+  let entries=auditLogCache.filter(e=>{
+    if(userFilter!=='all' && e.user!==userFilter) return false;
+    if(fromTs!==null && e.ts<fromTs) return false;
+    if(toTs!==null && e.ts>toTs) return false;
+    return true;
+  });
+  entries.sort((a,b)=>b.ts-a.ts); // newest first
+
+  if(!entries.length){
+    list.innerHTML=`<div style="color:var(--muted);font-size:.82rem;padding:16px 0;text-align:center;">ไม่มีรายการในช่วงที่เลือก</div>`;
+    return;
+  }
+
+  const actionLabel={add:'เพิ่ม',edit:'แก้ไข',delete:'ลบ'};
+  const actionCls={add:'log-add',edit:'log-edit',delete:'log-delete'};
+  let html=`<div style="font-size:.72rem;color:var(--muted);margin-bottom:8px;">${entries.length} รายการ</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">`;
+  entries.forEach(e=>{
+    const d=new Date(e.ts);
+    const timeStr=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    html+=`<div class="log-item">
+      <div class="log-time">${timeStr}</div>
+      <div class="log-action ${actionCls[e.action]||'log-edit'}">${actionLabel[e.action]||e.action}</div>
+      <div class="log-detail"><span class="log-user">${e.user}</span> · ${e.detail}</div>
+    </div>`;
+  });
+  list.innerHTML=html+'</div>';
 }
 
 async function clearAuditLog(){
@@ -1239,6 +1495,9 @@ async function clearAuditLog(){
   await fetch(`${FB}/audit_log.json`,{method:'DELETE'});
   renderAuditLog();
 }
+
+const CASE_LIMIT_AM=4; // warn from the 5th case onward in AM session
+const CASE_LIMIT_PM=3; // warn from the 4th case onward in PM session
 
 function saveOp(){
   const s=getStartMin(),e=getEndMin();
@@ -1250,15 +1509,44 @@ function saveOp(){
     else alert('กรุณาระบุชื่อ operation');
     return;
   }
+
+  // count existing cases in this room+session (excluding the one being edited)
+  const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
+  const ops=getOps(k);
+  const room=modalSlot.room, session=modalSlot.session;
+  const existingCount=ops.filter(o=>o.room===room&&o.session===session&&o.id!==editId).length;
+  const limit=session==='am'?CASE_LIMIT_AM:CASE_LIMIT_PM;
+
+  if(existingCount>=limit){
+    openCaseLimitWarning();
+    return;
+  }
+  commitSaveOp();
+}
+
+function openCaseLimitWarning(){
+  document.getElementById('caseLimitOverlay').classList.remove('hidden');
+}
+function closeCaseLimitWarning(){
+  document.getElementById('caseLimitOverlay').classList.add('hidden');
+}
+function confirmCaseLimitWarning(){
+  closeCaseLimitWarning();
+  commitSaveOp();
+}
+
+function commitSaveOp(){
+  const s=getStartMin(),e=getEndMin();
+  const opVal=getOpVal();
   const diag=document.getElementById('fDiag').value.trim();
   const remark=document.getElementById('fRemark').value.trim();
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
   let ops=getOps(k);
   const doc=document.getElementById('fDoc').value;
   if(editId){
-    ops=ops.map(o=>o.id===editId?{...o,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark}:o);
+    ops=ops.map(o=>o.id===editId?{...o,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency}:o);
   }else{
-    ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark}];
+    ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency}];
   }
   opsData[k]=ops;
   const dt=getDate(curYear,curMonth,curWeek,curDay);
@@ -1300,6 +1588,7 @@ function exportDay(){
 }
 
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.getElementById('caseLimitOverlay').addEventListener('click',function(e){if(e.target===this)closeCaseLimitWarning();});
 </script>
 </body>
 </html>
