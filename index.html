@@ -949,11 +949,7 @@ async function renderCentralTab(){
   rooms.forEach(room=>{
     html+=`<div class="cv-room"><div class="cv-room-header">${room}</div><div class="cv-sessions">`;
     sessions.forEach(sess=>{
-      const urgRank={emergency:0,urgent:1,elective:2};
-      const sOps=ops.filter(o=>o.room===room&&o.session===sess.id).sort((a,b)=>{
-        const ra=urgRank[a.urgency||'elective'], rb=urgRank[b.urgency||'elective'];
-        return ra!==rb ? ra-rb : a.startMin-b.startMin;
-      });
+      const sOps=ops.filter(o=>o.room===room&&o.session===sess.id).sort((a,b)=>a.startMin-b.startMin);
       const st=SESSION_TIMES[sess.id];
       html+=`<div class="cv-session">
         <div class="cv-sess-label">${sess.label} ${minToTime(st.start)}–${minToTime(st.end)}</div>`;
@@ -1003,7 +999,6 @@ function printCentralView(){
   const sessions=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
   const dt=getDate(cYear,cMonth,cWeek,cDay);
   const dateLabel=`วัน${DAYS[cDay]}ที่ ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;
-  const urgRank={emergency:0,urgent:1,elective:2};
   const urgLabelMap={emergency:'Emergency',urgent:'Urgent',elective:'Elective'};
 
   let html=`<div class="pr-header">
@@ -1017,10 +1012,7 @@ function printCentralView(){
       <div class="pr-sessions">`;
     sessions.forEach(sess=>{
       const st=SESSION_TIMES[sess.id];
-      const sOps=ops.filter(o=>o.room===room&&o.session===sess.id).sort((a,b)=>{
-        const ra=urgRank[a.urgency||'elective'], rb=urgRank[b.urgency||'elective'];
-        return ra!==rb ? ra-rb : a.startMin-b.startMin;
-      });
+      const sOps=ops.filter(o=>o.room===room&&o.session===sess.id).sort((a,b)=>a.startMin-b.startMin);
       html+=`<div class="pr-sess">
         <div class="pr-sess-label">${sess.label} ${minToTime(st.start)}–${minToTime(st.end)}</div>`;
       if(!sOps.length){
