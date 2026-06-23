@@ -526,59 +526,46 @@ const DAYS=["จันทร์","อังคาร","พุธ","พฤหั�
 const THAI_MONTHS=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 
 const ADMIN_ID="Admin";
-const VIEWER_USER={
-  id:"Viewer", password:"xxx",
-  names:[], dept:"surgery", isViewer:true,
-  slots:[]
-};
 const ALL_DOCTOR_NAMES=["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์","นพ.วีระพงศ์","นพ.พิษณุ","นพ.กันต์ชนะ","นพ.ภัทรพล","นพ.กฤษฎาพร","นพ.บุญยกร","พ.อารียา","พ.ฤทธิ์","พญ.ทัชชา","นพ.จารุสิทธิ์","พญ.วิชญาพร","นพ.ธีรศักดิ์","นพ.ณัฐวัฒน์","พญ.ชัชฎาภรณ์","พญ.ณัฐนรี","พญ.ภคินี"];
 const ALL_ROOMS=["OR-1","OR-2","OR-3","OR-4"];
 const ALL_SESSIONS=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
+const ALL_SLOTS=[0,1,2,3,4].flatMap(d=>ALL_ROOMS.flatMap(room=>["am","pm"].map(session=>({room,day:d,session}))));
 
-// Admin user object — all days, all rooms, all doctors
-const ADMIN_USER={
-  id:ADMIN_ID, password:"Admina01",
-  names:ALL_DOCTOR_NAMES,
-  dept:"surgery", // used for color only
-  isAdmin:true,
-  slots:[0,1,2,3,4].flatMap(d=>ALL_ROOMS.flatMap(room=>["am","pm"].map(session=>({room,day:d,session}))))
-};
+// ── USER DATA (loaded from Firebase /users/) ──────────
+// รหัสผ่านและรายชื่อผู้ใช้ทั้งหมดเก็บใน Firebase ที่ node /users
+// (ไม่ฝังในไฟล์ HTML/GitHub อีกต่อไป)
+// admin ใช้ค่าพิเศษ names:["ALL"] และ slots:"ALL" ใน Firebase
+let USERS_LOADED=false;
+let USERS_BY_ID={}; // populated from Firebase on load
 
-// Additional admin-equivalent users — same full access as ADMIN_USER
-const SC01_USER={
-  id:"Sc01", password:"Sc01",
-  names:ALL_DOCTOR_NAMES,
-  dept:"surgery",
-  isAdmin:true,
-  slots:[0,1,2,3,4].flatMap(d=>ALL_ROOMS.flatMap(room=>["am","pm"].map(session=>({room,day:d,session}))))
-};
-const AN01_USER={
-  id:"An01", password:"An01",
-  names:ALL_DOCTOR_NAMES,
-  dept:"surgery",
-  isAdmin:true,
-  slots:[0,1,2,3,4].flatMap(d=>ALL_ROOMS.flatMap(room=>["am","pm"].map(session=>({room,day:d,session}))))
-};
+async function loadUsersFromFirebase(){
+  try{
+    const data=await fbGet('users');
+    if(data){
+      USERS_BY_ID={};
+      Object.values(data).forEach(u=>{
+        const user={...u};
+        if(user.names && user.names.length===1 && user.names[0]==='ALL'){
+          user.names=ALL_DOCTOR_NAMES;
+        }
+        if(user.slots==='ALL'){
+          user.slots=ALL_SLOTS;
+        }
+        USERS_BY_ID[user.id]=user;
+      });
+      USERS_LOADED=true;
+      return true;
+    }
+  }catch(e){ /* fall through to offline fallback */ }
+  return false;
+}
 
-const DOCTORS=[
-  {id:"Ob1",password:"Ob1",names:["พญ.ระพีพรรณ","นพ.เกียรติพร","พญ.อารีรัตน์"],dept:"obstetrics",slots:[{room:"OR-3",day:0,session:"pm"},{room:"OR-3",day:1,session:"pm"},{room:"OR-2",day:2,session:"am"},{room:"OR-1",day:2,session:"pm"},{room:"OR-3",day:3,session:"am"},{room:"OR-2",day:4,session:"pm"}]},
-  {id:"Ob2",password:"Ob2",names:["นพ.วีระพงศ์"],dept:"obstetrics",slots:[{room:"OR-3",day:0,session:"am"},{room:"OR-1",day:4,session:"am"}]},
-  {id:"Ob3",password:"Ob3",names:["นพ.พิษณุ"],dept:"obstetrics",slots:[{room:"OR-2",day:0,session:"pm"},{room:"OR-2",day:4,session:"am"}]},
-  {id:"NSx",password:"NSx",names:["นพ.กันต์ชนะ"],dept:"neurosurgery",slots:[{room:"OR-2",day:0,session:"am"}]},
-  {id:"Ot1",password:"Ot1",names:["นพ.ภัทรพล"],dept:"orthopedics",slots:[{room:"OR-2",day:1,session:"am"},{room:"OR-2",day:1,session:"pm"}]},
-  {id:"Ot2",password:"Ot2",names:["นพ.กฤษฎาพร"],dept:"orthopedics",slots:[{room:"OR-2",day:3,session:"am"},{room:"OR-2",day:3,session:"pm"}]},
-  {id:"Ot3",password:"Ot3",names:["นพ.บุญยกร"],dept:"orthopedics",slots:[{room:"OR-3",day:4,session:"am"},{room:"OR-3",day:4,session:"pm"}]},
-  {id:"Ot4",password:"Ot4",names:["พ.อารียา"],dept:"orthopedics",slots:[{room:"OR-1",day:0,session:"am"},{room:"OR-1",day:0,session:"pm"}]},
-  {id:"Ot5",password:"Ot5",names:["พ.ฤทธิ์"],dept:"orthopedics",slots:[{room:"OR-1",day:0,session:"pm"},{room:"OR-2",day:2,session:"pm"}]},
-  {id:"Sx1",password:"Sx1",names:["พญ.ทัชชา"],dept:"surgery",slots:[{room:"OR-3",day:1,session:"am"},{room:"OR-3",day:2,session:"am"},{room:"OR-3",day:2,session:"pm"}]},
-  {id:"Sx2",password:"Sx2",names:["นพ.จารุสิทธิ์"],dept:"surgery",slots:[{room:"OR-1",day:3,session:"am"},{room:"OR-1",day:3,session:"pm"}]},
-  {id:"Sx3",password:"Sx3",names:["พญ.วิชญาพร"],dept:"surgery",slots:[{room:"OR-1",day:2,session:"am"},{room:"OR-3",day:3,session:"pm"}]},
-  {id:"Sx4",password:"Sx4",names:["นพ.ธีรศักดิ์"],dept:"surgery",slots:[{room:"OR-1",day:4,session:"pm"}]},
-  {id:"Mx",password:"Mx",names:["นพ.ณัฐวัฒน์"],dept:"maxillo",slots:[{room:"OR-1",day:1,session:"am"},{room:"OR-1",day:1,session:"pm"}]},
-  {id:"Op1",password:"Op1",names:["พญ.ชัชฎาภรณ์"],dept:"ophthalmology",slots:[{room:"OR-4",day:0,session:"am"},{room:"OR-4",day:0,session:"pm"},{room:"OR-4",day:1,session:"am"},{room:"OR-4",day:1,session:"pm"},{room:"OR-4",day:4,session:"am"},{room:"OR-4",day:4,session:"pm"}]},
-  {id:"Op2",password:"Op2",names:["พญ.ณัฐนรี"],dept:"ophthalmology",slots:[{room:"OR-4",day:0,session:"am"},{room:"OR-4",day:0,session:"pm"},{room:"OR-4",day:2,session:"am"},{room:"OR-4",day:2,session:"pm"},{room:"OR-4",day:4,session:"am"},{room:"OR-4",day:4,session:"pm"}]},
-  {id:"Op3",password:"Op3",names:["พญ.ภคินี"],dept:"ophthalmology",slots:[{room:"OR-4",day:0,session:"am"},{room:"OR-4",day:0,session:"pm"},{room:"OR-4",day:3,session:"am"},{room:"OR-4",day:3,session:"pm"},{room:"OR-4",day:4,session:"am"},{room:"OR-4",day:4,session:"pm"}]},
-];
+function findUserByPassword(pw){
+  return Object.values(USERS_BY_ID).find(u=>u.password===pw);
+}
+
+// kept for backward compatibility — user list now lives in USERS_BY_ID
+const DOCTORS=[];
 
 // ── STATE ─────────────────────────────────────────────
 let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null, selUrgency='elective';
@@ -649,17 +636,30 @@ function setConn(ok){
 }
 
 // ── LOGIN / LOGOUT ───────────────────────────────────
-function doLogin(){
+async function doLogin(){
   const pw=document.getElementById('pwInput').value.trim();
-  attemptLogin(pw, true);
+  document.getElementById('pwErr').textContent='';
+  await attemptLogin(pw, true);
 }
-function attemptLogin(pw, isManual){
-  // check admin and viewer first
-  let doc = pw===ADMIN_USER.password ? ADMIN_USER
-          : pw===SC01_USER.password ? SC01_USER
-          : pw===AN01_USER.password ? AN01_USER
-          : pw===VIEWER_USER.password ? VIEWER_USER
-          : DOCTORS.find(d=>d.password===pw);
+async function attemptLogin(pw, isManual){
+  // ensure user list is loaded from Firebase before checking password
+  if(!USERS_LOADED){
+    if(isManual){
+      document.getElementById('pwErr').textContent='⏳ กำลังเชื่อมต่อ กรุณารอสักครู่...';
+    }
+    const ok=await loadUsersFromFirebase();
+    if(!ok){
+      if(isManual){
+        document.getElementById('pwErr').textContent='⚠️ เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง';
+      } else {
+        try{ localStorage.removeItem('or-saved-pw'); }catch(e){}
+      }
+      return;
+    }
+    if(isManual) document.getElementById('pwErr').textContent='';
+  }
+
+  let doc = findUserByPassword(pw);
   if(!doc){
     if(isManual){
       document.getElementById('pwErr').textContent='❌ รหัสผ่านไม่ถูกต้อง';
@@ -693,6 +693,7 @@ function tryAutoLogin(){
   try{
     const saved=localStorage.getItem('or-saved-pw');
     if(saved){ attemptLogin(saved, false); }
+    else { loadUsersFromFirebase(); } // pre-warm for faster first manual login
   }catch(e){}
 }
 tryAutoLogin();
@@ -1048,8 +1049,9 @@ async function renderCentralTab(){
 }
 
 function getDeptFromDoctor(name){
-  for(const doc of DOCTORS){
-    if(doc.names.includes(name))return doc.dept;
+  for(const doc of Object.values(USERS_BY_ID)){
+    if(doc.isAdmin || doc.isViewer) continue; // skip admin-equivalent/viewer entries
+    if(doc.names && doc.names.includes(name))return doc.dept;
   }
   return 'surgery';
 }
@@ -1164,7 +1166,9 @@ function buildModalDocs(){
     // group by dept for readability
     let html='';
     Object.entries(DEPT_NAMES).forEach(([deptId,deptName])=>{
-      const docs=DOCTORS.filter(d=>d.dept===deptId).flatMap(d=>d.names);
+      const docs=Object.values(USERS_BY_ID)
+        .filter(d=>!d.isAdmin && !d.isViewer && d.dept===deptId)
+        .flatMap(d=>d.names);
       if(!docs.length)return;
       html+=`<optgroup label="${deptName}">`;
       docs.forEach(n=>{ html+=`<option value="${n}">${n}</option>`; });
