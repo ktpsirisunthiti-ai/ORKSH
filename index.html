@@ -152,6 +152,12 @@ button,select,input{font-family:inherit;}
 .cv-op-doc{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cv-op-name{color:var(--text-strong,#0d1117);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cv-empty{font-size:.72rem;color:var(--border2);font-style:italic;}
+.cv-announce{background:rgba(63,185,80,.1);border:1px dashed #3fb950;border-radius:6px;padding:8px 10px;font-size:.72rem;color:#3fb950;}
+.cv-announce-title{font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;}
+.announce-btn{width:100%;padding:6px;border:1px dashed #3fb950;border-radius:7px;background:rgba(63,185,80,.08);color:#3fb950;cursor:pointer;font-size:.76rem;text-align:center;margin-top:6px;}
+.announce-btn:hover{background:rgba(63,185,80,.15);}
+.announce-banner{background:rgba(63,185,80,.1);border:1px solid #3fb950;border-radius:7px;padding:9px 12px;font-size:.78rem;color:#3fb950;margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.announce-cancel-btn{padding:4px 10px;border:1px solid #3fb950;border-radius:6px;background:transparent;color:#3fb950;cursor:pointer;font-size:.7rem;white-space:nowrap;}
 
 /* ── AUDIT LOG ── */
 .log-item{display:flex;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:.78rem;align-items:flex-start;}
@@ -576,6 +582,7 @@ const DOCTORS=[
 
 // ── STATE ─────────────────────────────────────────────
 let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null, selUrgency='elective';
+let announceData={}; // { "year_month_week_day_room_session": {doctor, names, note, ts} }
 
 // Start from today June 9 2026
 const _now=new Date();
@@ -700,6 +707,10 @@ async function loadAllData(){
     setConn(false);
     try{const r=localStorage.getItem('or-sched-bk');if(r)opsData=JSON.parse(r);}catch(e2){}
   }
+  try{
+    const adata=await fbGet('announcements');
+    announceData=adata||{};
+  }catch(e){ announceData={}; }
   document.getElementById('loadingScreen').style.display='none';
 
   // setup dept color on app
@@ -750,7 +761,11 @@ async function loadAllData(){
 
   // poll every 8s
   setInterval(async()=>{
-    try{const d=await fbGet('schedule');opsData=d||{};setConn(true);renderMyTab();renderCentralTab();}
+    try{
+      const d=await fbGet('schedule');opsData=d||{};
+      const ad=await fbGet('announcements');announceData=ad||{};
+      setConn(true);renderMyTab();renderCentralTab();
+    }
     catch(e){setConn(false);}
   },8000);
 }
@@ -764,6 +779,39 @@ async function saveAll(){
   }catch(e){showSync('⚠ บันทึกไม่สำเร็จ','#f78166');setConn(false);}
 }
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveAll,800);}
+
+// ── SLOT ANNOUNCEMENT (ไม่ใช้ห้องนี้) ──────────────────
+function announceKey(room,session){
+  return `${curYear}_${curMonth}_${curWeek}_${curDay}_${room}_${session}`;
+}
+async function announceSlotFree(room,session){
+  if(currentUser.isViewer) return;
+  const note=prompt('ระบุข้อความเพิ่มเติม (ถ้ามี) เช่น "ติดต่อได้ทาง LINE กลุ่ม"','');
+  if(note===null) return; // cancelled prompt
+  const k=announceKey(room,session);
+  announceData[k]={
+    doctor: currentUser.names ? currentUser.names.join(', ') : currentUser.id,
+    note: note.trim(),
+    ts: Date.now(),
+    by: currentUser.id
+  };
+  showSync('⏳ กำลังบันทึก…',DEPT_COLORS[currentUser.dept]||'#58a6ff');
+  try{
+    await fbSet('announcements',announceData);
+    showSync('✓ ประกาศแล้ว','#3fb950');
+  }catch(e){ showSync('⚠ บันทึกไม่สำเร็จ','#f78166'); }
+  renderMyTab(); renderCentralTab();
+}
+async function cancelAnnounce(room,session){
+  const k=announceKey(room,session);
+  delete announceData[k];
+  try{ await fbSet('announcements',announceData); showSync('✓ ยกเลิกประกาศแล้ว','#3fb950'); }
+  catch(e){ showSync('⚠ ทำไม่สำเร็จ','#f78166'); }
+  renderMyTab(); renderCentralTab();
+}
+function getAnnounce(y,m,w,d,room,session){
+  return announceData[`${y}_${m}_${w}_${d}_${room}_${session}`];
+}
 
 // ── TABS ──────────────────────────────────────────────
 function switchTab(t){
@@ -875,6 +923,7 @@ function renderMyTab(){
       const label=sl.session==='am'?`☀ เช้า ${minToTime(st.start)}–${minToTime(st.end)}`:`🌤 บ่าย ${minToTime(st.start)}–${minToTime(st.end)}`;
       const slotOps=ops.filter(o=>o.room===sl.room&&o.session===sl.session);
       const key=`${sl.room}_${sl.session}`;
+      const ann=getAnnounce(curYear,curMonth,curWeek,curDay,sl.room,sl.session);
       html+=`<div class="slot-card">
         <div class="slot-header">
           <div class="slot-header-left">
@@ -899,8 +948,18 @@ function renderMyTab(){
           </div>
         </div>`;
       });
-      html+=`<button class="add-btn" onclick="openAdd('${sl.room}','${sl.session}')">+ เพิ่ม operation</button>
-        </div></div>`;
+      html+=`<button class="add-btn" onclick="openAdd('${sl.room}','${sl.session}')">+ เพิ่ม operation</button>`;
+      if(!slotOps.length){
+        if(ann){
+          html+=`<div class="announce-banner">
+            <span>📢 ประกาศไม่ใช้ห้องนี้แล้ว${ann.note?' · '+ann.note:''}</span>
+            <button class="announce-cancel-btn" onclick="cancelAnnounce('${sl.room}','${sl.session}')">ยกเลิกประกาศ</button>
+          </div>`;
+        } else {
+          html+=`<button class="announce-btn" onclick="announceSlotFree('${sl.room}','${sl.session}')">📢 ประกาศไม่ใช้ห้องนี้</button>`;
+        }
+      }
+      html+=`</div></div>`;
     });
   }
   document.getElementById('slotGrid').innerHTML=html;
@@ -954,7 +1013,15 @@ async function renderCentralTab(){
       html+=`<div class="cv-session">
         <div class="cv-sess-label">${sess.label} ${minToTime(st.start)}–${minToTime(st.end)}</div>`;
       if(!sOps.length){
-        html+=`<div class="cv-empty">ว่าง</div>`;
+        const ann=getAnnounce(cYear,cMonth,cWeek,cDay,room,sess.id);
+        if(ann){
+          html+=`<div class="cv-announce">
+            <div class="cv-announce-title">📢 ไม่ใช้ห้องนี้</div>
+            <div>${ann.doctor}${ann.note?' · '+ann.note:''}</div>
+          </div>`;
+        } else {
+          html+=`<div class="cv-empty">ว่าง</div>`;
+        }
       } else {
         sOps.forEach(op=>{
           const dc=DEPT_COLORS[getDeptFromDoctor(op.doctor)]||'#58a6ff';
@@ -1016,7 +1083,12 @@ function printCentralView(){
       html+=`<div class="pr-sess">
         <div class="pr-sess-label">${sess.label} ${minToTime(st.start)}–${minToTime(st.end)}</div>`;
       if(!sOps.length){
-        html+=`<div class="pr-empty">ว่าง</div>`;
+        const ann=getAnnounce(cYear,cMonth,cWeek,cDay,room,sess.id);
+        if(ann){
+          html+=`<div class="pr-empty" style="color:#000 !important;font-style:normal;">📢 ${ann.doctor} ไม่ใช้ห้องนี้${ann.note?' · '+ann.note:''}</div>`;
+        } else {
+          html+=`<div class="pr-empty">ว่าง</div>`;
+        }
       } else {
         sOps.forEach(op=>{
           const urg=op.urgency||'elective';
@@ -1542,6 +1614,16 @@ function commitSaveOp(){
     ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency}];
   }
   opsData[k]=ops;
+
+  // if this slot had an "ไม่ใช้ห้องนี้" announcement, clear it since it's now in use
+  if(!editId){
+    const annK=announceKey(modalSlot.room,modalSlot.session);
+    if(announceData[annK]){
+      delete announceData[annK];
+      fbSet('announcements',announceData).catch(()=>{});
+    }
+  }
+
   const dt=getDate(curYear,curMonth,curWeek,curDay);
   const dateStr=`${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]}`;
   if(editId){
