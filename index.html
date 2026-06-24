@@ -123,6 +123,20 @@ button,select,input{font-family:inherit;}
 .urgency-badge-sm.elective{background:rgba(63,185,80,.18);color:#3fb950;border:1px solid #3fb950;}
 .urgency-badge-sm.urgent{background:rgba(227,179,65,.18);color:#e3b341;border:1px solid #e3b341;}
 .urgency-badge-sm.emergency{background:rgba(247,129,102,.18);color:#f78166;border:1px solid #f78166;}
+/* ── STATUS (completed/cancelled) ── */
+.status-btn{flex:1;padding:8px 4px;border:1.5px solid var(--border2);border-radius:7px;background:var(--surface2);color:var(--muted);cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s;}
+.status-btn.active[data-st="scheduled"]{border-color:#58a6ff;background:rgba(88,166,255,.15);color:#58a6ff;}
+.status-btn.active[data-st="completed"]{border-color:#3fb950;background:rgba(63,185,80,.15);color:#3fb950;}
+.status-btn.active[data-st="cancelled"]{border-color:#f78166;background:rgba(247,129,102,.15);color:#f78166;}
+.status-btn.active[data-rst="scheduled"]{border-color:#58a6ff;background:rgba(88,166,255,.15);color:#58a6ff;}
+.status-btn.active[data-rst="completed"]{border-color:#3fb950;background:rgba(63,185,80,.15);color:#3fb950;}
+.status-btn.active[data-rst="cancelled"]{border-color:#f78166;background:rgba(247,129,102,.15);color:#f78166;}
+.rec-tlabel{font-size:.6rem;color:var(--muted);margin-bottom:3px;}
+.status-tag{display:inline-block;font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:middle;}
+.status-tag.completed{background:rgba(63,185,80,.18);color:#3fb950;border:1px solid #3fb950;}
+.status-tag.cancelled{background:rgba(247,129,102,.18);color:#f78166;border:1px solid #f78166;}
+.op-item.is-cancelled{opacity:.55;}
+.op-item.is-cancelled .op-name{text-decoration:line-through;}
 .op-meta{font-size:.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
 .op-doc{font-size:.75rem;color:var(--dc,#58a6ff);font-weight:600;}
 .add-btn{width:100%;padding:8px;border:1px dashed var(--border2);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;font-size:.82rem;text-align:center;transition:all .15s;margin-top:4px;}
@@ -159,6 +173,32 @@ button,select,input{font-family:inherit;}
 .announce-banner{background:rgba(63,185,80,.1);border:1px solid #3fb950;border-radius:7px;padding:9px 12px;font-size:.78rem;color:#3fb950;margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
 .announce-cancel-btn{padding:4px 10px;border:1px solid #3fb950;border-radius:6px;background:transparent;color:#3fb950;cursor:pointer;font-size:.7rem;white-space:nowrap;}
 
+/* ── DASHBOARD ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.kpi-card.accent{border-color:var(--dc,#58a6ff);}
+.kpi-label{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+.kpi-val{font-size:1.5rem;font-weight:800;line-height:1.1;font-family:'IBM Plex Mono',monospace;}
+.kpi-sub{font-size:.66rem;color:var(--muted);margin-top:4px;}
+.dash-section{margin-bottom:20px;}
+.dash-title{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;font-weight:700;}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.bar-row{display:grid;grid-template-columns:120px 1fr 88px;gap:10px;align-items:center;margin-bottom:9px;font-size:.76rem;}
+.bar-row:last-child{margin-bottom:0;}
+.bar-label{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{background:var(--surface2);border-radius:6px;height:18px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:6px;transition:width .3s;min-width:2px;}
+.bar-val{text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--muted2);font-size:.72rem;}
+.bar-over{box-shadow:inset 0 0 0 1.5px #f78166;}
+.dash-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:680px){.dash-grid2{grid-template-columns:1fr;}.bar-row{grid-template-columns:90px 1fr 76px;}}
+.trend-row{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px;}
+.trend-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;}
+.trend-bars{display:flex;align-items:flex-end;gap:3px;height:100%;width:100%;justify-content:center;}
+.trend-bar{width:14px;border-radius:3px 3px 0 0;min-height:2px;}
+.trend-lab{font-size:.6rem;color:var(--muted);white-space:nowrap;}
+.mix-chip{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;margin-right:14px;margin-bottom:4px;}
+.mix-dot{width:9px;height:9px;border-radius:2px;display:inline-block;}
 /* ── AUDIT LOG ── */
 .log-item{display:flex;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);font-size:.78rem;align-items:flex-start;}
 .log-item:last-child{border-bottom:none;}
@@ -193,7 +233,7 @@ button,select,input{font-family:inherit;}
 #printArea{display:none;}
 @media print{
   body{background:#fff !important;color:#000 !important;padding:0;}
-  .login-wrap,.loading-screen,.topbar,.tab-bar,.overlay,.controls,.app>.tab-content{display:none !important;}
+  .login-wrap,.loading-screen,.topbar,.tab-bar,.overlay,.controls,.app>.tab-content,#contentHistory,#contentLog,#contentDashboard{display:none !important;}
   #printArea{display:block !important;background:#fff;color:#000;padding:0;}
   #printArea *{color:#000 !important;}
   .pr-header{text-align:center;margin-bottom:14px;border-bottom:2px solid #000;padding-bottom:10px;}
@@ -261,6 +301,7 @@ button,select,input{font-family:inherit;}
     <div class="tab active" id="tabMy" onclick="switchTab('my')">📋 ตารางของฉัน</div>
     <div class="tab" id="tabHistory" onclick="switchTab('history')">📜 ประวัติของฉัน</div>
     <div class="tab" id="tabCentral" onclick="switchTab('central')">🏥 ตารางรวม</div>
+    <div class="tab" id="tabDashboard" onclick="switchTab('dashboard')" style="display:none;">📊 Dashboard</div>
     <div class="tab" id="tabLog" onclick="switchTab('log')" style="display:none;">🔍 Audit Log</div>
   </div>
 
@@ -383,6 +424,38 @@ button,select,input{font-family:inherit;}
     <div id="auditLogList"></div>
   </div>
 
+  <!-- DASHBOARD TAB -->
+  <div class="tab-content" id="contentDashboard">
+    <div class="controls" style="align-items:flex-end;">
+      <div class="ctrl-group">
+        <div class="ctrl-label">ช่วงเวลา</div>
+        <div class="pill-row" id="dashPeriodBtns">
+          <button class="pill" data-p="day" onclick="setDashPeriod('day')">รายวัน</button>
+          <button class="pill active" data-p="week" onclick="setDashPeriod('week')">รายสัปดาห์</button>
+          <button class="pill" data-p="month" onclick="setDashPeriod('month')">รายเดือน</button>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">เดือน</div>
+        <div class="month-nav">
+          <button class="nav-btn" onclick="shiftDashMonth(-1)">‹</button>
+          <div id="dashMonthLabel" class="month-label"></div>
+          <button class="nav-btn" onclick="shiftDashMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="ctrl-group" id="dashWeekWrap">
+        <div class="ctrl-label">สัปดาห์</div>
+        <div id="dashWeekBtns" class="pill-row"></div>
+      </div>
+      <div class="ctrl-group" id="dashDayWrap">
+        <div class="ctrl-label">วัน</div>
+        <div id="dashDayBtns" class="pill-row"></div>
+      </div>
+      <button class="btn-ghost" onclick="printDashboard()">🖨 พิมพ์</button>
+    </div>
+    <div id="dashboardBody"></div>
+  </div>
+
 <!-- PRINT-ONLY AREA -->
 <div id="printArea"></div>
 
@@ -407,6 +480,7 @@ button,select,input{font-family:inherit;}
     <div class="form-row">
       <label class="form-label">แพทย์</label>
       <select class="fsel" id="fDoc" onchange="onDocChange()"></select>
+      <input class="fsel" id="fDocCustom" type="text" placeholder="พิมพ์ชื่อแพทย์..." style="display:none;margin-top:7px;background:var(--bg);">
     </div>
     <div class="form-row">
       <label class="form-label">Diagnosis</label>
@@ -448,6 +522,27 @@ button,select,input{font-family:inherit;}
       </div>
     </div>
     <div class="form-row">
+      <div class="time-grid">
+        <div>
+          <label class="form-label">Surgical position</label>
+          <select class="fsel" id="fPosition">
+            <option value="">— ไม่ระบุ —</option>
+            <option>Supine</option><option>Prone</option><option>Lithotomy</option>
+            <option>Lateral (Left)</option><option>Lateral (Right)</option><option>Beach chair</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Choice of anesthesia</label>
+          <select class="fsel" id="fAnesthesia">
+            <option value="">— ไม่ระบุ —</option>
+            <option>GA c oral ETT</option><option>GA c Nasal ETT</option><option>TIVA</option>
+            <option>Spinal block</option><option>Peripheral nerve block</option>
+            <option>LA by surgeon</option><option>LA by MAC</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="form-row">
       <label class="form-label">ช่วงเวลา</label>
       <div class="time-grid">
         <div>
@@ -477,6 +572,41 @@ button,select,input{font-family:inherit;}
       <button class="btn-delete" id="btnDel" style="display:none" onclick="deleteOp()">ลบ</button>
       <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
       <button class="btn-primary" onclick="saveOp()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECORD / บันทึกผล MODAL (recorder) -->
+<div class="overlay hidden" id="recordOverlay">
+  <div class="modal">
+    <div class="modal-title">📝 บันทึกผลผ่าตัด<span class="modal-sub" id="recSub"></span></div>
+    <div style="background:var(--surface2);border-radius:7px;padding:9px 12px;margin-bottom:14px;">
+      <div id="recDoc" style="font-weight:700;font-size:.9rem;"></div>
+      <div id="recOp" style="color:var(--muted2);font-size:.78rem;margin-top:2px;"></div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">สถานะ</label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="status-btn" data-rst="completed" onclick="selectRecStatus('completed')">✓ เสร็จ</button>
+        <button type="button" class="status-btn" data-rst="cancelled" onclick="selectRecStatus('cancelled')">✗ ยกเลิก</button>
+        <button type="button" class="status-btn" data-rst="scheduled" onclick="selectRecStatus('scheduled')">↺ ล้าง</button>
+      </div>
+    </div>
+    <div id="recTimesWrap" style="display:none;">
+      <div class="time-grid" style="margin-bottom:10px;">
+        <div><div class="rec-tlabel">Time in OR</div><input class="fsel" id="recTimeIn" type="time" step="300" onchange="onRecTimeChange()"></div>
+        <div><div class="rec-tlabel">Procedure start</div><input class="fsel" id="recProcStart" type="time" step="300" onchange="onRecTimeChange()"></div>
+        <div><div class="rec-tlabel">Procedure end</div><input class="fsel" id="recProcEnd" type="time" step="300" onchange="onRecTimeChange()"></div>
+        <div><div class="rec-tlabel">Time out OR</div><input class="fsel" id="recTimeOut" type="time" step="300" onchange="onRecTimeChange()"></div>
+      </div>
+      <div class="dur-hint" id="recDurHint"></div>
+    </div>
+    <div id="recCancelWrap" style="display:none;margin-bottom:6px;">
+      <input class="fsel" id="recCancelReason" type="text" placeholder="เหตุผลที่ยกเลิก (ถ้ามี)..." style="background:var(--bg);">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeRecordModal()">ยกเลิก</button>
+      <button class="btn-primary" onclick="saveRecord()">บันทึกผล</button>
     </div>
   </div>
 </div>
@@ -568,7 +698,7 @@ function findUserByPassword(pw){
 const DOCTORS=[];
 
 // ── STATE ─────────────────────────────────────────────
-let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null, selUrgency='elective';
+let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null, selUrgency='elective', selStatus='scheduled';
 let announceData={}; // { "year_month_week_day_room_session": {doctor, names, note, ts} }
 
 // Start from today June 9 2026
@@ -582,12 +712,19 @@ let cYear=curYear, cMonth=curMonth;
 
 // current week/day
 let curWeek=0, curDay=0, cWeek=0, cDay=0;
+// dashboard nav state
+let dPeriod='week', dYear=null, dMonth=null, dWeek=0, dDay=0;
 
 // ── HELPERS ──────────────────────────────────────────
 const minToTime=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 const fmtDur=m=>{const h=Math.floor(m/60),mn=m%60;return h>0?(mn>0?`${h}ชม.${mn}น.`:`${h}ชม.`):`${mn}น.`;};
 const genId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function overlaps(a,b){return !(a.endMin<=b.startMin||a.startMin>=b.endMin);}
+function statusTagHtml(op){
+  if(op&&op.status==='completed') return '<span class="status-tag completed">✓ เสร็จ</span>';
+  if(op&&op.status==='cancelled') return '<span class="status-tag cancelled">✗ ยกเลิก</span>';
+  return '';
+}
 
 function weeksInMonth(y,m){
   let d=new Date(y,m,1);
@@ -715,23 +852,28 @@ async function loadAllData(){
   document.getElementById('loadingScreen').style.display='none';
 
   // setup dept color on app
-  const dc=currentUser.isAdmin?'#58a6ff':currentUser.isViewer?'#3fb950':DEPT_COLORS[currentUser.dept];
-  const db=currentUser.isAdmin?'rgba(88,166,255,.15)':currentUser.isViewer?'rgba(63,185,80,.15)':DEPT_BG[currentUser.dept];
+  const isStaff=!currentUser.isAdmin&&!currentUser.isViewer&&!currentUser.isExec&&!currentUser.isRecorder;
+  const dc=currentUser.isAdmin?'#58a6ff':currentUser.isExec?'#d2a8ff':currentUser.isRecorder?'#79c0ff':currentUser.isViewer?'#3fb950':DEPT_COLORS[currentUser.dept];
+  const db=currentUser.isAdmin?'rgba(88,166,255,.15)':currentUser.isExec?'rgba(210,168,255,.15)':currentUser.isRecorder?'rgba(121,192,255,.15)':currentUser.isViewer?'rgba(63,185,80,.15)':DEPT_BG[currentUser.dept];
   document.documentElement.style.setProperty('--dc',dc);
   document.documentElement.style.setProperty('--db',db);
 
-  document.getElementById('deptBadge').textContent=currentUser.isAdmin?'🔑 Admin':currentUser.isViewer?'👁 ดูอย่างเดียว':DEPT_NAMES[currentUser.dept];
+  document.getElementById('deptBadge').textContent=currentUser.isAdmin?'🔑 Admin':currentUser.isExec?'📊 ผู้บริหาร':currentUser.isRecorder?'📝 บันทึกผล':currentUser.isViewer?'👁 ดูอย่างเดียว':DEPT_NAMES[currentUser.dept];
   document.getElementById('deptBadge').style.borderColor=dc;
   document.getElementById('deptBadge').style.background=db;
   document.getElementById('deptBadge').style.color=dc;
-  document.getElementById('topTitle').textContent=currentUser.isAdmin?`ผู้ดูแลระบบ (${currentUser.id})`:currentUser.isViewer?'View Only':currentUser.names.join(' · ');
+  document.getElementById('topTitle').textContent=currentUser.isAdmin?`ผู้ดูแลระบบ (${currentUser.id})`:currentUser.isExec?'ผู้บริหาร':currentUser.isRecorder?'เจ้าหน้าที่บันทึกผล':currentUser.isViewer?'View Only':currentUser.names.join(' · ');
 
-  // hide "ตารางของฉัน" and history tab for viewer
-  document.getElementById('tabMy').style.display=currentUser.isViewer?'none':'block';
-  document.getElementById('tabHistory').style.display=currentUser.isViewer?'none':'block';
-  // show audit log tab for admin only
+  // ── tab visibility by role ──
+  const canSchedule = currentUser.isAdmin || currentUser.isRecorder || isStaff;
+  document.getElementById('tabMy').style.display=canSchedule?'block':'none';
+  document.getElementById('tabHistory').style.display=(isStaff||currentUser.isAdmin)?'block':'none';
+  document.getElementById('tabCentral').style.display=currentUser.isExec?'none':'block';
   document.getElementById('tabLog').style.display=currentUser.isAdmin?'block':'none';
-  if(currentUser.isViewer) switchTab('central');
+  document.getElementById('tabDashboard').style.display=(currentUser.isExec||currentUser.isRecorder)?'block':'none';
+  if(currentUser.isExec) switchTab('dashboard');
+  else if(currentUser.isViewer) switchTab('central');
+  else switchTab('my');
 
   // ── init to TODAY every login ──────────────────────
   // reset month to today's real month
@@ -816,7 +958,7 @@ function getAnnounce(y,m,w,d,room,session){
 
 // ── TABS ──────────────────────────────────────────────
 function switchTab(t){
-  ['my','history','central','log'].forEach(id=>{
+  ['my','history','central','dashboard','log'].forEach(id=>{
     const capId=id.charAt(0).toUpperCase()+id.slice(1);
     const tab=document.getElementById('tab'+capId);
     const content=document.getElementById('content'+capId);
@@ -828,6 +970,7 @@ function switchTab(t){
   });
   if(t==='log') renderAuditLog();
   if(t==='history') renderHistory();
+  if(t==='dashboard') renderDashboard();
 }
 
 // ── MONTH/WEEK NAV (MY) ──────────────────────────────
@@ -885,10 +1028,14 @@ function renderMyTab(){
   // ── slot info panel ──
   const allSlots=currentUser.slots;
   let infoHtml='';
-  if(currentUser.isAdmin){
-    infoHtml=`<div style="background:rgba(88,166,255,.08);border:1px solid #58a6ff;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.82rem;color:#58a6ff;">
-      🔑 <strong>Admin Mode</strong> — เข้าถึงได้ทุกห้อง ทุกวัน ทุกแพทย์
-    </div>`;
+  if(currentUser.isAdmin||currentUser.isRecorder){
+    infoHtml=currentUser.isRecorder
+      ? `<div style="background:rgba(121,192,255,.08);border:1px solid #79c0ff;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.82rem;color:#79c0ff;">
+          📝 <strong>โหมดบันทึกผล</strong> — เปิดเคสเพื่อกด "เสร็จ" / "ยกเลิก" และกรอกเวลาจริง (ทุกห้อง ทุกแพทย์)
+        </div>`
+      : `<div style="background:rgba(88,166,255,.08);border:1px solid #58a6ff;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.82rem;color:#58a6ff;">
+          🔑 <strong>Admin Mode</strong> — เข้าถึงได้ทุกห้อง ทุกวัน ทุกแพทย์
+        </div>`;
   } else {
     infoHtml=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:14px;">
       <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">📅 OR Slots ของฉัน (ทุกสัปดาห์)</div>
@@ -938,13 +1085,19 @@ function renderMyTab(){
         const bc=conflict?'#e3b341':dc;
         const urg=op.urgency||'elective';
         const urgLabel=urg==='emergency'?'Emergency':urg==='urgent'?'Urgent':'Elective';
-        html+=`<div class="op-item" style="border-left-color:${bc}" onclick="openEdit('${op.id}','${sl.room}','${sl.session}')">
+        const stTag=statusTagHtml(op);
+        const _din=(op.timeInOR!=null)?op.timeInOR:op.actualStartMin, _dout=(op.timeOutOR!=null)?op.timeOutOR:op.actualEndMin;
+        const actualLine=(op.status==='completed'&&_din!=null&&_dout!=null)
+          ? `<div class="op-meta" style="color:#3fb950;">✓ ในห้อง ${minToTime(_din)}–${minToTime(_dout)} · ${fmtDur(_dout-_din)}</div>` : '';
+        html+=`<div class="op-item${op.status==='cancelled'?' is-cancelled':''}" style="border-left-color:${bc}" onclick="openEdit('${op.id}','${sl.room}','${sl.session}')">
           <span class="urgency-badge ${urg}">${urgLabel}</span>
           <div class="op-info" style="padding-right:70px;">
             <div class="op-doc" style="color:${bc}">${op.doctor}</div>
             ${op.diagnosis?`<div class="op-meta" style="color:var(--muted2);font-style:italic;">${op.diagnosis}</div>`:''}
-            <div class="op-name">${op.op}</div>
+            <div class="op-name">${op.op}${stTag}</div>
             <div class="op-meta">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
+            ${(op.position||op.anesthesia)?`<div class="op-meta" style="color:var(--muted2);">${[op.position,op.anesthesia].filter(Boolean).join(' · ')}</div>`:''}
+            ${actualLine}
             ${op.remark?`<div class="op-meta" style="color:var(--warn);">📝 ${op.remark}</div>`:''}
           </div>
         </div>`;
@@ -1029,13 +1182,14 @@ async function renderCentralTab(){
           const db=DEPT_BG[getDeptFromDoctor(op.doctor)]||'rgba(88,166,255,.15)';
           const urg=op.urgency||'elective';
           const urgLabel=urg==='emergency'?'Emerg.':urg==='urgent'?'Urgent':'Elect.';
-          html+=`<div class="cv-op" style="border-left-color:${dc};background:${db}">
+          html+=`<div class="cv-op${op.status==='cancelled'?' is-cancelled':''}" style="border-left-color:${dc};background:${db}">
             <span class="urgency-badge-sm ${urg}">${urgLabel}</span>
             <div style="padding-right:58px;">
               <div class="cv-op-doc" style="color:${dc}">${op.doctor}</div>
               ${op.diagnosis?`<div style="font-size:.65rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${op.diagnosis}</div>`:''}
-              <div class="cv-op-name">${op.op}</div>
+              <div class="cv-op-name">${op.op}${statusTagHtml(op)}</div>
               <div style="font-size:.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
+              ${(op.position||op.anesthesia)?`<div style="font-size:.6rem;color:var(--muted2);margin-top:1px;">${[op.position,op.anesthesia].filter(Boolean).join(' · ')}</div>`:''}
               ${op.remark?`<div style="font-size:.65rem;color:var(--warn);margin-top:2px;">📝 ${op.remark}</div>`:''}
             </div>
           </div>`;
@@ -1050,7 +1204,7 @@ async function renderCentralTab(){
 
 function getDeptFromDoctor(name){
   for(const doc of Object.values(USERS_BY_ID)){
-    if(doc.isAdmin || doc.isViewer) continue; // skip admin-equivalent/viewer entries
+    if(doc.isAdmin || doc.isViewer || doc.isExec || doc.isRecorder) continue; // skip non-doctor accounts
     if(doc.names && doc.names.includes(name))return doc.dept;
   }
   return 'surgery';
@@ -1117,7 +1271,7 @@ function printCentralView(){
 
 // ── MODAL ─────────────────────────────────────────────
 function openAdd(room,session){
-  if(currentUser.isViewer) return;
+  if(currentUser.isViewer||currentUser.isExec) return;
   editId=null;modalSlot={room,session};
   const st=SESSION_TIMES[session];
   buildModalDocs();
@@ -1139,41 +1293,124 @@ function openAdd(room,session){
   buildOpSelect();
   onOpSel();
   onTimeChange();
+  document.getElementById('fDocCustom').style.display='none';document.getElementById('fDocCustom').value='';
+  document.getElementById('fPosition').value='';document.getElementById('fAnesthesia').value='';
   document.getElementById('overlay').classList.remove('hidden');
 }
 function openEdit(id,room,session){
-  if(currentUser.isViewer) return;
+  if(currentUser.isViewer||currentUser.isExec) return;
   const op=curOps().find(o=>o.id===id);if(!op)return;
+  if(currentUser.isRecorder){ openRecordModal(op,room,session); return; }
   editId=id;modalSlot={room,session};
   buildModalDocs();
   buildTimeSelects(session,op.startMin,op.endMin);
+  setDocVal(op.doctor);
   buildOpSelect();
   setOpVal(op.op);
-  document.getElementById('fDoc').value=op.doctor;
   document.getElementById('fDiag').value=op.diagnosis||'';
   document.getElementById('fRemark').value=op.remark||'';
+  document.getElementById('fPosition').value=op.position||'';
+  document.getElementById('fAnesthesia').value=op.anesthesia||'';
   buildUrgencyBtns(op.urgency||'elective');
   document.getElementById('modalTitle').innerHTML=`✏️ แก้ไข Operation<span class="modal-sub">${room} · ${session==='am'?'เช้า':'บ่าย'}</span>`;
   document.getElementById('btnDel').style.display='block';
   checkConflict();onTimeChange();
   document.getElementById('overlay').classList.remove('hidden');
 }
+
+// ── RECORD MODAL (บันทึกผล) — recorder only ──
+let recEditId=null, recSlot=null, recStatus='scheduled';
+function openRecordModal(op,room,session){
+  recEditId=op.id; recSlot={room,session};
+  document.getElementById('recSub').textContent=`${room} · ${session==='am'?'เช้า':'บ่าย'}`;
+  document.getElementById('recDoc').textContent=op.doctor;
+  document.getElementById('recOp').textContent=(op.diagnosis?op.diagnosis+' · ':'')+op.op;
+  recStatus=op.status||'scheduled';
+  buildRecStatusBtns(recStatus);
+  document.getElementById('recTimeIn').value   = op.timeInOR!=null?minToTime(op.timeInOR):minToTime(op.startMin);
+  document.getElementById('recProcStart').value= op.procStart!=null?minToTime(op.procStart):minToTime(op.startMin);
+  document.getElementById('recProcEnd').value  = op.procEnd!=null?minToTime(op.procEnd):minToTime(op.endMin);
+  document.getElementById('recTimeOut').value  = op.timeOutOR!=null?minToTime(op.timeOutOR):minToTime(op.endMin);
+  document.getElementById('recCancelReason').value=op.cancelReason||'';
+  refreshRecFields();
+  document.getElementById('recordOverlay').classList.remove('hidden');
+}
+function closeRecordModal(){ document.getElementById('recordOverlay').classList.add('hidden'); recEditId=null; recSlot=null; }
+function buildRecStatusBtns(v){
+  recStatus=v||'scheduled';
+  document.querySelectorAll('#recordOverlay .status-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('data-rst')===recStatus));
+}
+function selectRecStatus(v){ buildRecStatusBtns(v); refreshRecFields(); }
+function refreshRecFields(){
+  document.getElementById('recTimesWrap').style.display = recStatus==='completed'?'block':'none';
+  document.getElementById('recCancelWrap').style.display = recStatus==='cancelled'?'block':'none';
+  if(recStatus==='completed') onRecTimeChange();
+}
+function onRecTimeChange(){
+  const tin=parseTimeToMin(document.getElementById('recTimeIn').value);
+  const tout=parseTimeToMin(document.getElementById('recTimeOut').value);
+  const h=document.getElementById('recDurHint');
+  if(tin!=null&&tout!=null&&tout>tin){h.textContent='⏱ ใช้ห้อง '+fmtDur(tout-tin);h.style.color='#3fb950';}
+  else if(tin!=null&&tout!=null){h.textContent='⚠ Time out OR ต้องมากกว่า Time in OR';h.style.color='#f78166';}
+  else h.textContent='';
+}
+function saveRecord(){
+  const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
+  const ops=getOps(k);
+  let patch;
+  if(recStatus==='completed'){
+    const tin=parseTimeToMin(document.getElementById('recTimeIn').value);
+    const tout=parseTimeToMin(document.getElementById('recTimeOut').value);
+    const ps=parseTimeToMin(document.getElementById('recProcStart').value);
+    const pe=parseTimeToMin(document.getElementById('recProcEnd').value);
+    if(tin==null||tout==null||tout<=tin){ alert('กรุณากรอก Time in / Time out OR ให้ถูกต้อง'); return; }
+    patch={status:'completed',timeInOR:tin,timeOutOR:tout,procStart:ps,procEnd:pe,cancelReason:null,statusBy:currentUser.id,statusTs:Date.now()};
+  } else if(recStatus==='cancelled'){
+    patch={status:'cancelled',timeInOR:null,timeOutOR:null,procStart:null,procEnd:null,cancelReason:document.getElementById('recCancelReason').value.trim()||null,statusBy:currentUser.id,statusTs:Date.now()};
+  } else {
+    patch={status:'scheduled',timeInOR:null,timeOutOR:null,procStart:null,procEnd:null,cancelReason:null,statusBy:currentUser.id,statusTs:Date.now()};
+  }
+  opsData[k]=ops.map(o=>o.id===recEditId?{...o,...patch}:o);
+  const op=opsData[k].find(o=>o.id===recEditId);
+  const dt=getDate(curYear,curMonth,curWeek,curDay);
+  const stTxt={completed:'✓เสร็จ',cancelled:'✗ยกเลิก',scheduled:'📋ตามแผน'}[recStatus]||'';
+  writeLog('edit',`บันทึกผล · ${recSlot.room} ${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} · ${op?op.doctor:''} · ${stTxt}`);
+  scheduleSave(); closeRecordModal(); renderMyTab(); renderCentralTab();
+}
+function parseTimeToMin(v){
+  if(!v||v.indexOf(':')<0) return null;
+  const [h,m]=v.split(':').map(Number);
+  return h*60+m;
+}
 function closeModal(){document.getElementById('overlay').classList.add('hidden');editId=null;modalSlot=null;}
 
+// admin + recorder get full access to all doctors / all departments in the modal
+const fullAcc=()=>currentUser&&(currentUser.isAdmin||currentUser.isRecorder);
+function getDocVal(){
+  const v=document.getElementById('fDoc').value;
+  return v==='__OTHER__' ? document.getElementById('fDocCustom').value.trim() : v;
+}
+function setDocVal(name){
+  const sel=document.getElementById('fDoc'), cust=document.getElementById('fDocCustom');
+  sel.value=name;
+  if(sel.value===name && name!=='__OTHER__'){ cust.style.display='none'; cust.value=''; }
+  else { sel.value='__OTHER__'; cust.style.display='block'; cust.value=name; }
+}
 function buildModalDocs(){
   const sel=document.getElementById('fDoc');
-  if(currentUser.isAdmin){
+  if(fullAcc()){
     // group by dept for readability
     let html='';
     Object.entries(DEPT_NAMES).forEach(([deptId,deptName])=>{
       const docs=Object.values(USERS_BY_ID)
-        .filter(d=>!d.isAdmin && !d.isViewer && d.dept===deptId)
-        .flatMap(d=>d.names);
+        .filter(d=>!d.isAdmin && !d.isViewer && !d.isExec && !d.isRecorder && d.dept===deptId)
+        .flatMap(d=>d.names||[]).filter(Boolean);
       if(!docs.length)return;
       html+=`<optgroup label="${deptName}">`;
       docs.forEach(n=>{ html+=`<option value="${n}">${n}</option>`; });
       html+=`</optgroup>`;
     });
+    html+=`<optgroup label="อื่นๆ"><option value="__OTHER__">✎ แพทย์อื่นๆ (ระบุชื่อ)</option></optgroup>`;
     sel.innerHTML=html;
   } else {
     sel.innerHTML=currentUser.names.map(n=>`<option value="${n}">${n}</option>`).join('');
@@ -1182,7 +1419,7 @@ function buildModalDocs(){
 function buildOpSelect(){
   // if admin, use dept of selected doctor; else use currentUser.dept
   let dept=currentUser.dept;
-  if(currentUser.isAdmin){
+  if(fullAcc()){
     const doc=document.getElementById('fDoc').value;
     dept=getDeptFromDoctor(doc)||'surgery';
   }
@@ -1198,7 +1435,13 @@ function buildOpSelect(){
   document.getElementById('fOpTAHBSO').checked=false;
 }
 function onDocChange(){
-  if(currentUser.isAdmin){ buildOpSelect(); onOpSel(); }
+  const isOther=document.getElementById('fDoc').value==='__OTHER__';
+  document.getElementById('fDocCustom').style.display=isOther?'block':'none';
+  if(isOther){
+    document.getElementById('fDocCustom').focus();
+    document.getElementById('fOp').innerHTML=`<option value="อื่นๆ (พิมพ์เอง)">อื่นๆ (พิมพ์เอง)</option>`; // ไม่มีแผนก → พิมพ์ operation เอง
+    onOpSel();
+  } else if(fullAcc()){ buildOpSelect(); onOpSel(); }
   checkConflict();
 }
 const SIDE_REQUIRED_OPS=["Explore lap ovarian cystectomy","Explore lap salpingectomy","PE + IOL","Ptx","IVT","Blepharoplasty","PPV"];
@@ -1255,7 +1498,7 @@ function getOpVal(){
   return v;
 }
 function setOpVal(val){
-  const dept=currentUser.isAdmin?getDeptFromDoctor(document.getElementById('fDoc').value):currentUser.dept;
+  const dept=fullAcc()?getDeptFromDoctor(document.getElementById('fDoc').value):currentUser.dept;
   const ops=DEPT_OPS[dept]||[];
   const sel=document.getElementById('fOp');
   document.getElementById('fOpSide').style.display='none';
@@ -1578,6 +1821,8 @@ function saveOp(){
     alert('กรุณาระบุชื่อ operation');
     return;
   }
+  const _docName=getDocVal();
+  if(!_docName){ alert('กรุณาระบุชื่อแพทย์'); return; }
 
   // count existing cases in this room+session (excluding the one being edited)
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
@@ -1611,11 +1856,14 @@ function commitSaveOp(){
   const remark=document.getElementById('fRemark').value.trim();
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
   let ops=getOps(k);
-  const doc=document.getElementById('fDoc').value;
+  const doc=getDocVal();
+  const position=document.getElementById('fPosition').value||null;
+  const anesthesia=document.getElementById('fAnesthesia').value||null;
+
   if(editId){
-    ops=ops.map(o=>o.id===editId?{...o,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency}:o);
+    ops=ops.map(o=>o.id===editId?{...o,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,position,anesthesia}:o);
   }else{
-    ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency}];
+    ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,status:'scheduled',position,anesthesia}];
   }
   opsData[k]=ops;
 
@@ -1666,8 +1914,330 @@ function exportDay(){
   navigator.clipboard.writeText(txt).then(()=>showSync('✓ คัดลอกแล้ว','#3fb950')).catch(()=>alert(txt));
 }
 
+// ══════════════════════════════════════════════════════
+// ── DASHBOARD (utilization) ───────────────────────────
+// ══════════════════════════════════════════════════════
+const SESS_LEN={am:240,pm:180};
+const DAY_CAP=(SESS_LEN.am+SESS_LEN.pm)*ALL_ROOMS.length;
+
+function dashInit(){
+  if(dYear==null){ dYear=curYear; dMonth=curMonth; dWeek=curWeek; dDay=curDay; }
+}
+function setDashPeriod(p){
+  dPeriod=p;
+  document.querySelectorAll('#dashPeriodBtns .pill').forEach(b=>b.classList.toggle('active',b.getAttribute('data-p')===p));
+  renderDashboard();
+}
+function shiftDashMonth(dir){
+  dMonth+=dir;
+  if(dMonth>11){dMonth=0;dYear++;}
+  if(dMonth<0){dMonth=11;dYear--;}
+  dWeek=0;renderDashboard();
+}
+function setDashWeek(w){dWeek=w;renderDashboard();}
+function setDashDay(d){dDay=d;renderDashboard();}
+
+function weekdaysInMonth(y,m){
+  let n=0;const last=new Date(y,m+1,0).getDate();
+  for(let day=1;day<=last;day++){const wd=new Date(y,m,day).getDay();if(wd>=1&&wd<=5)n++;}
+  return n;
+}
+function dashPeriodDates(){
+  if(dPeriod==='day') return [getDate(dYear,dMonth,dWeek,dDay)];
+  if(dPeriod==='week') return [0,1,2,3,4].map(i=>getDate(dYear,dMonth,dWeek,i));
+  const arr=[];const last=new Date(dYear,dMonth+1,0).getDate();
+  for(let day=1;day<=last;day++){const dt=new Date(dYear,dMonth,day);const wd=dt.getDay();if(wd>=1&&wd<=5)arr.push(dt);}
+  return arr;
+}
+function dashWeekdayCounts(){
+  const c=[0,0,0,0,0];
+  dashPeriodDates().forEach(dt=>{const wd=dt.getDay();if(wd>=1&&wd<=5)c[wd-1]++;});
+  return c;
+}
+function dashPeriodOps(){
+  const res=[];
+  const byDate = dPeriod!=='month';
+  let dateSet=null;
+  if(byDate) dateSet=new Set(dashPeriodDates().map(d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime();}));
+  Object.entries(opsData).forEach(([key,arr])=>{
+    if(!Array.isArray(arr))return;
+    const p=key.split('_');if(p.length!==4)return;
+    const [y,mm,w,dd]=p.map(Number);
+    const dt=getDate(y,mm,w,dd);dt.setHours(0,0,0,0);
+    const inP = byDate ? dateSet.has(dt.getTime()) : (dt.getFullYear()===dYear&&dt.getMonth()===dMonth);
+    if(!inP)return;
+    const wd=dt.getDay()-1;
+    arr.forEach(op=>res.push({...op,_dt:dt,_wd:wd}));
+  });
+  return res;
+}
+const isCancelled=o=>o.status==='cancelled';
+const plannedDur=o=>Math.max(0,(o.endMin||0)-(o.startMin||0));
+function actualDur(o){
+  if(o.status!=='completed')return 0;
+  if(o.timeInOR!=null&&o.timeOutOR!=null&&o.timeOutOR>o.timeInOR) return o.timeOutOR-o.timeInOR;
+  if(o.actualStartMin!=null&&o.actualEndMin!=null&&o.actualEndMin>o.actualStartMin) return o.actualEndMin-o.actualStartMin; // legacy
+  return plannedDur(o);
+}
+function isOverrun(o){
+  if(isCancelled(o))return false;
+  const end=(o.status==='completed'&&o.timeOutOR!=null)?o.timeOutOR:((o.status==='completed'&&o.actualEndMin!=null)?o.actualEndMin:o.endMin);
+  return end>(SESSION_TIMES[o.session]?SESSION_TIMES[o.session].end:99999);
+}
+
+function computeDashStats(){
+  const ops=dashPeriodOps();
+  const dates=dashPeriodDates();
+  const nDays=dates.length;
+  const availMin=nDays*DAY_CAP;
+  const live=ops.filter(o=>!isCancelled(o));
+
+  const bookedMin=live.reduce((s,o)=>s+plannedDur(o),0);
+  const actMin=ops.reduce((s,o)=>s+actualDur(o),0);
+  const completed=ops.filter(o=>o.status==='completed').length;
+  const cancelled=ops.filter(isCancelled).length;
+  const recordedPast=completed+cancelled;
+
+  const rooms=ALL_ROOMS.map(room=>{
+    const ro=live.filter(o=>o.room===room);
+    const cap=nDays*(SESS_LEN.am+SESS_LEN.pm);
+    return {room,cases:ro.length,min:ro.reduce((s,o)=>s+plannedDur(o),0),act:ops.filter(o=>o.room===room).reduce((s,o)=>s+actualDur(o),0),cap};
+  });
+  const sessions=['am','pm'].map(ss=>{
+    const so=live.filter(o=>o.session===ss);
+    const cap=nDays*ALL_ROOMS.length*SESS_LEN[ss];
+    return {ss,cases:so.length,min:so.reduce((s,o)=>s+plannedDur(o),0),cap};
+  });
+  const wdc=dashWeekdayCounts();
+  const weekdays=[0,1,2,3,4].map(i=>{
+    const wo=live.filter(o=>o._wd===i);
+    const cap=wdc[i]*DAY_CAP;
+    return {i,cases:wo.length,min:wo.reduce((s,o)=>s+plannedDur(o),0),cap};
+  });
+  const alloc=deptAllocatedMinPeriod(wdc);
+  const deptMap={};
+  live.forEach(o=>{const d=getDeptFromDoctor(o.doctor);(deptMap[d]=deptMap[d]||{min:0,cases:0}).min+=plannedDur(o);deptMap[d].cases++;});
+  const depts=Object.keys(DEPT_NAMES).map(d=>({dept:d,name:DEPT_NAMES[d],min:(deptMap[d]||{}).min||0,cases:(deptMap[d]||{}).cases||0,alloc:alloc[d]||0})).filter(x=>x.min>0||x.alloc>0);
+  const mix={elective:0,urgent:0,emergency:0};
+  live.forEach(o=>{mix[o.urgency||'elective']=(mix[o.urgency||'elective']||0)+1;});
+  const opCount={};
+  live.forEach(o=>{opCount[o.op]=(opCount[o.op]||0)+1;});
+  const topOps=Object.entries(opCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const docMin={};
+  live.forEach(o=>{docMin[o.doctor]=(docMin[o.doctor]||0)+plannedDur(o);});
+  const topDocs=Object.entries(docMin).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  let used=0,releasedSlots=0,empty=0;
+  const liveByKey={};
+  live.forEach(o=>{const k=o._dt.getTime()+'|'+o.room+'|'+o.session;liveByKey[k]=true;});
+  dates.forEach(dt=>{const t=new Date(dt);t.setHours(0,0,0,0);
+    ALL_ROOMS.forEach(room=>['am','pm'].forEach(ss=>{
+      const k=t.getTime()+'|'+room+'|'+ss;
+      if(liveByKey[k]) used++;
+      else if(announceHasFor(dt,room,ss)) releasedSlots++;
+      else empty++;
+    }));
+  });
+  const overruns=ops.filter(isOverrun).length;
+
+  return {nDays,availMin,bookedMin,actMin,bookedCases:live.length,completed,cancelled,recordedPast,
+    rooms,sessions,weekdays,depts,mix,topOps,topDocs,used,releasedSlots,empty,overruns,totalSlots:used+releasedSlots+empty};
+}
+function deptAllocatedMinPeriod(wdc){
+  const map={};
+  Object.values(USERS_BY_ID).forEach(u=>{
+    if(u.isAdmin||u.isViewer||u.isExec||u.isRecorder)return;
+    if(!Array.isArray(u.slots))return;
+    u.slots.forEach(sl=>{
+      const n=wdc[sl.day]||0;
+      map[u.dept]=(map[u.dept]||0)+(SESS_LEN[sl.session]||0)*n;
+    });
+  });
+  return map;
+}
+function announceHasFor(dt,room,session){
+  const t=new Date(dt);t.setHours(0,0,0,0);
+  for(const key of Object.keys(announceData)){
+    const p=key.split('_');if(p.length!==6)continue;
+    const [y,m,w,d,r,s]=p;
+    if(r!==room||s!==session)continue;
+    const ad=getDate(+y,+m,+w,+d);ad.setHours(0,0,0,0);
+    if(ad.getTime()===t.getTime())return true;
+  }
+  return false;
+}
+function pct(n,d){return d>0?Math.round(n/d*100):0;}
+function utilColor(p){return p>100?'#f78166':p>=70?'#3fb950':p>=40?'#e3b341':'#58a6ff';}
+
+function renderDashboard(){
+  dashInit();
+  document.getElementById('dashMonthLabel').textContent=`${THAI_MONTHS[dMonth]} ${dYear+543}`;
+  const showWeek=dPeriod!=='month', showDay=dPeriod==='day';
+  document.getElementById('dashWeekWrap').style.display=showWeek?'flex':'none';
+  document.getElementById('dashDayWrap').style.display=showDay?'flex':'none';
+  if(showWeek) document.getElementById('dashWeekBtns').innerHTML=buildMonthWeekNav(dYear,dMonth,dWeek,'setDashWeek','dashMonthLabel');
+  if(showDay) document.getElementById('dashDayBtns').innerHTML=buildDayNav(dYear,dMonth,dWeek,dDay,'setDashDay');
+
+  const s=computeDashStats();
+  const bookedU=pct(s.bookedMin,s.availMin), actU=pct(s.actMin,s.availMin);
+  const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
+
+  let periodLabel;
+  if(dPeriod==='day'){const dt=getDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  else if(dPeriod==='week')periodLabel=`สัปดาห์ ${dWeek+1} (${weekRange(dYear,dMonth,dWeek)} ${THAI_MONTHS[dMonth]}) · ${dYear+543}`;
+  else periodLabel=`${THAI_MONTHS[dMonth]} ${dYear+543} · ${s.nDays} วันทำการ`;
+
+  let h=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">📊 ${periodLabel}</div>`;
+
+  h+=`<div class="kpi-grid">
+    ${kpi('การใช้ห้อง (ตามแผน)',bookedU+'%',`จอง ${Math.round(s.bookedMin)} / ${s.availMin} นาที`,utilColor(bookedU),true)}
+    ${kpi('การใช้ห้อง (จริง)',actU+'%',`ผ่าจริง ${Math.round(s.actMin)} นาที`,utilColor(actU),true)}
+    ${kpi('เคสทั้งหมด',s.bookedCases,`เสร็จ ${s.completed} · ยกเลิก ${s.cancelled}`,'#58a6ff')}
+    ${kpi('อัตรายกเลิก',cancelRate+'%',`${s.cancelled} จาก ${s.bookedCases+s.cancelled} เคส`,cancelRate>15?'#f78166':'#9198a1')}
+    ${kpi('Slot ที่ใช้',`${s.used}/${s.totalSlots}`,`คืน ${s.releasedSlots} · ว่าง ${s.empty}`,'#3fb950')}
+    ${kpi('เคสเกินเวลา',s.overruns,'over-run เกินช่วงเวลา',s.overruns>0?'#e3b341':'#9198a1')}
+  </div>`;
+
+  h+=`<div class="dash-grid2">
+    <div class="dash-section"><div class="dash-title">การใช้ห้อง รายห้อง</div><div class="dash-card">${barList(s.rooms.map(r=>({label:r.room,val:r.min,cap:r.cap,note:r.cases+' เคส'})))}</div></div>
+    <div class="dash-section"><div class="dash-title">เช้า vs บ่าย</div><div class="dash-card">${barList(s.sessions.map(x=>({label:x.ss==='am'?'☀ เช้า':'🌤 บ่าย',val:x.min,cap:x.cap,note:x.cases+' เคส'})))}</div></div>
+  </div>`;
+
+  h+=`<div class="dash-section"><div class="dash-title">รายแผนก — ใช้จริง เทียบ โควต้าที่จัดสรร</div><div class="dash-card">`;
+  if(!s.depts.length) h+=`<div style="color:var(--muted);font-size:.78rem;">ไม่มีข้อมูล</div>`;
+  else s.depts.sort((a,b)=>b.min-a.min).forEach(d=>{
+    const u=pct(d.min,d.alloc);
+    const dc=DEPT_COLORS[d.dept]||'#58a6ff';
+    h+=`<div class="bar-row">
+      <div class="bar-label" style="color:${dc}">${d.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.min(u,100)}%;background:${dc}"></div></div>
+      <div class="bar-val">${d.alloc>0?u+'%':'—'} · ${d.cases}เคส</div>
+    </div>`;
+  });
+  h+=`<div style="font-size:.64rem;color:var(--muted);margin-top:8px;">% = นาทีที่ใช้จริง ÷ นาทีโควต้าที่จัดสรรให้แผนกนั้นในช่วงนี้</div></div></div>`;
+
+  if(dPeriod!=='day'){
+    h+=`<div class="dash-section"><div class="dash-title">การใช้ห้อง รายวัน (จ–ศ)</div><div class="dash-card">${barList(s.weekdays.map(w=>({label:DAYS[w.i],val:w.min,cap:w.cap,note:w.cases+' เคส'})))}</div></div>`;
+  }
+
+  const mixTot=s.mix.elective+s.mix.urgent+s.mix.emergency||1;
+  h+=`<div class="dash-grid2">
+    <div class="dash-section"><div class="dash-title">ความเร่งด่วน</div><div class="dash-card">
+      <div style="display:flex;flex-wrap:wrap;margin-bottom:10px;">
+        <span class="mix-chip"><span class="mix-dot" style="background:#3fb950"></span>Elective ${s.mix.elective} (${pct(s.mix.elective,mixTot)}%)</span>
+        <span class="mix-chip"><span class="mix-dot" style="background:#e3b341"></span>Urgent ${s.mix.urgent} (${pct(s.mix.urgent,mixTot)}%)</span>
+        <span class="mix-chip"><span class="mix-dot" style="background:#f78166"></span>Emergency ${s.mix.emergency} (${pct(s.mix.emergency,mixTot)}%)</span>
+      </div>
+      <div class="bar-track" style="height:14px;display:flex;">
+        <div style="width:${pct(s.mix.elective,mixTot)}%;background:#3fb950"></div>
+        <div style="width:${pct(s.mix.urgent,mixTot)}%;background:#e3b341"></div>
+        <div style="width:${pct(s.mix.emergency,mixTot)}%;background:#f78166"></div>
+      </div>
+    </div></div>
+    <div class="dash-section"><div class="dash-title">หัตถการที่ทำบ่อย</div><div class="dash-card">${rankList(s.topOps,' เคส')||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>
+  </div>`;
+
+  h+=`<div class="dash-section"><div class="dash-title">แพทย์ตามเวลาที่ใช้ห้อง</div><div class="dash-card">${rankList(s.topDocs.map(([n,m])=>[n,fmtDur(m)]),'')||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>`;
+
+  h+=`<div class="dash-section"><div class="dash-title">แนวโน้มการใช้ห้อง 6 เดือนล่าสุด</div><div class="dash-card">${trendHtml()}</div>
+    <div style="font-size:.64rem;color:var(--muted);margin-top:8px;"><span style="color:#58a6ff">▮</span> ตามแผน &nbsp; <span style="color:#3fb950">▮</span> จริง</div></div>`;
+
+  document.getElementById('dashboardBody').innerHTML=h;
+}
+function kpi(label,val,sub,color,accent){
+  return `<div class="kpi-card${accent?' accent':''}">
+    <div class="kpi-label">${label}</div>
+    <div class="kpi-val" style="color:${color}">${val}</div>
+    <div class="kpi-sub">${sub}</div>
+  </div>`;
+}
+function barList(rows){
+  return rows.map(r=>{
+    const p=pct(r.val,r.cap);
+    const over=p>100;
+    return `<div class="bar-row">
+      <div class="bar-label">${r.label}</div>
+      <div class="bar-track${over?' bar-over':''}"><div class="bar-fill" style="width:${Math.min(p,100)}%;background:${utilColor(p)}"></div></div>
+      <div class="bar-val">${p}% · ${r.note}</div>
+    </div>`;
+  }).join('');
+}
+function rankList(entries,suffix){
+  const max=entries.length?entries[0][1]:0;
+  return entries.map(([name,val])=>{
+    const numeric=typeof val==='number';
+    const w=numeric&&max>0?Math.round(val/max*100):60;
+    return `<div class="bar-row">
+      <div class="bar-label" title="${name}">${name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:#58a6ff"></div></div>
+      <div class="bar-val">${val}${suffix}</div>
+    </div>`;
+  }).join('');
+}
+function trendHtml(){
+  const months=[];
+  for(let i=5;i>=0;i--){
+    let y=dYear,m=dMonth-i;
+    while(m<0){m+=12;y--;}
+    months.push({y,m});
+  }
+  const data=months.map(({y,m})=>{
+    const nWd=weekdaysInMonth(y,m);
+    const cap=nWd*DAY_CAP;
+    let booked=0,act=0;
+    Object.entries(opsData).forEach(([key,arr])=>{
+      if(!Array.isArray(arr))return;
+      const p=key.split('_');if(p.length!==4)return;
+      const [ky,km,kw,kd]=p.map(Number);
+      const dt=getDate(ky,km,kw,kd);
+      if(dt.getFullYear()!==y||dt.getMonth()!==m)return;
+      arr.forEach(o=>{if(!isCancelled(o))booked+=plannedDur(o);act+=actualDur(o);});
+    });
+    return {y,m,bU:pct(booked,cap),aU:pct(act,cap)};
+  });
+  const maxU=Math.max(100,...data.map(d=>Math.max(d.bU,d.aU)));
+  return `<div class="trend-row">${data.map(d=>`
+    <div class="trend-col">
+      <div class="trend-bars">
+        <div class="trend-bar" style="height:${d.bU/maxU*100}%;background:#58a6ff" title="ตามแผน ${d.bU}%"></div>
+        <div class="trend-bar" style="height:${d.aU/maxU*100}%;background:#3fb950" title="จริง ${d.aU}%"></div>
+      </div>
+      <div class="trend-lab">${THAI_MONTHS[d.m]}<br>${d.bU}%</div>
+    </div>`).join('')}</div>`;
+}
+function printDashboard(){
+  dashInit();
+  const s=computeDashStats();
+  const bookedU=pct(s.bookedMin,s.availMin), actU=pct(s.actMin,s.availMin);
+  const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
+  let periodLabel;
+  if(dPeriod==='day'){const dt=getDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  else if(dPeriod==='week')periodLabel=`สัปดาห์ ${dWeek+1} (${weekRange(dYear,dMonth,dWeek)} ${THAI_MONTHS[dMonth]}) ${dYear+543}`;
+  else periodLabel=`${THAI_MONTHS[dMonth]} ${dYear+543} (${s.nDays} วันทำการ)`;
+
+  const row=(a,b)=>`<tr><td style="padding:4px 10px;border:1px solid #000;">${a}</td><td style="padding:4px 10px;border:1px solid #000;text-align:right;">${b}</td></tr>`;
+  let h=`<div class="pr-header"><div class="pr-title">📊 รายงานการใช้ห้องผ่าตัด · KSH</div><div class="pr-sub">${periodLabel}</div></div>`;
+  h+=`<table style="border-collapse:collapse;width:100%;font-size:13px;margin-bottom:14px;">
+    ${row('การใช้ห้อง (ตามแผน)',bookedU+'% — จอง '+Math.round(s.bookedMin)+'/'+s.availMin+' นาที')}
+    ${row('การใช้ห้อง (จริง)',actU+'% — '+Math.round(s.actMin)+' นาที')}
+    ${row('เคสทั้งหมด',s.bookedCases+' (เสร็จ '+s.completed+' · ยกเลิก '+s.cancelled+')')}
+    ${row('อัตรายกเลิก',cancelRate+'%')}
+    ${row('Slot ใช้/คืน/ว่าง',s.used+' / '+s.releasedSlots+' / '+s.empty)}
+    ${row('เคสเกินเวลา',s.overruns)}
+  </table>`;
+  h+=`<div style="font-weight:800;margin:8px 0 4px;">การใช้ห้อง รายห้อง</div><table style="border-collapse:collapse;width:100%;font-size:13px;margin-bottom:12px;">`;
+  s.rooms.forEach(r=>h+=row(r.room,pct(r.min,r.cap)+'% · '+r.cases+' เคส'));
+  h+=`</table>`;
+  h+=`<div style="font-weight:800;margin:8px 0 4px;">รายแผนก (ใช้จริง vs โควต้า)</div><table style="border-collapse:collapse;width:100%;font-size:13px;">`;
+  s.depts.sort((a,b)=>b.min-a.min).forEach(d=>h+=row(d.name,(d.alloc>0?pct(d.min,d.alloc)+'%':'—')+' · '+d.cases+' เคส'));
+  h+=`</table>`;
+  document.getElementById('printArea').innerHTML=h;
+  window.print();
+}
+
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('caseLimitOverlay').addEventListener('click',function(e){if(e.target===this)closeCaseLimitWarning();});
+document.getElementById('recordOverlay').addEventListener('click',function(e){if(e.target===this)closeRecordModal();});
 </script>
 </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
