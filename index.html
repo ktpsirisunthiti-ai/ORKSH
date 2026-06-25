@@ -305,6 +305,7 @@ button,select,input{font-family:inherit;}
     <div class="tab" id="tabHistory" onclick="switchTab('history')">📜 ประวัติของฉัน</div>
     <div class="tab" id="tabCentral" onclick="switchTab('central')">🏥 ตารางรวม</div>
     <div class="tab" id="tabDashboard" onclick="switchTab('dashboard')" style="display:none;">📊 Dashboard</div>
+    <div class="tab" id="tabNurse" onclick="switchTab('nurse')" style="display:none;">🧑‍⚕️ Workload พยาบาล</div>
     <div class="tab" id="tabLog" onclick="switchTab('log')" style="display:none;">🔍 Audit Log</div>
   </div>
 
@@ -457,6 +458,37 @@ button,select,input{font-family:inherit;}
       <button class="btn-ghost" onclick="printDashboard()">🖨 พิมพ์</button>
     </div>
     <div id="dashboardBody"></div>
+  </div>
+
+  <!-- NURSE WORKLOAD TAB -->
+  <div class="tab-content" id="contentNurse">
+    <div class="controls" style="align-items:flex-end;">
+      <div class="ctrl-group">
+        <div class="ctrl-label">ช่วงเวลา</div>
+        <div class="pill-row" id="nPeriodBtns">
+          <button class="pill active" data-p="day" onclick="setNPeriod('day')">รายวัน</button>
+          <button class="pill" data-p="week" onclick="setNPeriod('week')">รายสัปดาห์</button>
+          <button class="pill" data-p="month" onclick="setNPeriod('month')">รายเดือน</button>
+        </div>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">เดือน</div>
+        <div class="month-nav">
+          <button class="nav-btn" onclick="shiftNMonth(-1)">‹</button>
+          <div id="nMonthLabel" class="month-label"></div>
+          <button class="nav-btn" onclick="shiftNMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="ctrl-group" id="nWeekWrap">
+        <div class="ctrl-label">สัปดาห์</div>
+        <div id="nWeekBtns" class="pill-row"></div>
+      </div>
+      <div class="ctrl-group" id="nDayWrap">
+        <div class="ctrl-label">วัน</div>
+        <div id="nDayBtns" class="pill-row"></div>
+      </div>
+    </div>
+    <div id="nurseBody"></div>
   </div>
 
 <!-- PRINT-ONLY AREA -->
@@ -723,6 +755,8 @@ let cYear=curYear, cMonth=curMonth;
 let curWeek=0, curDay=0, cWeek=0, cDay=0;
 // dashboard nav state
 let dPeriod='week', dYear=null, dMonth=null, dWeek=0, dDay=0;
+let nurseData={}; // { "y_m_w_d": {totalNurses, castCases, roomNurses:{OR-1..4, cast}} }
+let nPeriod='day', nYear=null, nMonth=null, nWeek=0, nDay=0;
 
 // ── HELPERS ──────────────────────────────────────────
 const minToTime=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
@@ -858,29 +892,32 @@ async function loadAllData(){
     const adata=await fbGet('announcements');
     announceData=adata||{};
   }catch(e){ announceData={}; }
+  try{ const nwd=await fbGet('nurse_wl'); nurseData=nwd||{}; }catch(e){ nurseData={}; }
   document.getElementById('loadingScreen').style.display='none';
 
   // setup dept color on app
-  const isStaff=!currentUser.isAdmin&&!currentUser.isViewer&&!currentUser.isExec&&!currentUser.isRecorder;
-  const dc=currentUser.isAdmin?'#58a6ff':currentUser.isExec?'#d2a8ff':currentUser.isRecorder?'#79c0ff':currentUser.isViewer?'#3fb950':DEPT_COLORS[currentUser.dept];
-  const db=currentUser.isAdmin?'rgba(88,166,255,.15)':currentUser.isExec?'rgba(210,168,255,.15)':currentUser.isRecorder?'rgba(121,192,255,.15)':currentUser.isViewer?'rgba(63,185,80,.15)':DEPT_BG[currentUser.dept];
+  const isStaff=!currentUser.isAdmin&&!currentUser.isViewer&&!currentUser.isExec&&!currentUser.isRecorder&&!currentUser.isNurse;
+  const dc=currentUser.isAdmin?'#58a6ff':currentUser.isExec?'#d2a8ff':currentUser.isRecorder?'#79c0ff':currentUser.isNurse?'#f778ba':currentUser.isViewer?'#3fb950':DEPT_COLORS[currentUser.dept];
+  const db=currentUser.isAdmin?'rgba(88,166,255,.15)':currentUser.isExec?'rgba(210,168,255,.15)':currentUser.isRecorder?'rgba(121,192,255,.15)':currentUser.isNurse?'rgba(247,120,186,.15)':currentUser.isViewer?'rgba(63,185,80,.15)':DEPT_BG[currentUser.dept];
   document.documentElement.style.setProperty('--dc',dc);
   document.documentElement.style.setProperty('--db',db);
 
-  document.getElementById('deptBadge').textContent=currentUser.isAdmin?'🔑 Admin':currentUser.isExec?'📊 ผู้บริหาร':currentUser.isRecorder?'📝 บันทึกผล':currentUser.isViewer?'👁 ดูอย่างเดียว':DEPT_NAMES[currentUser.dept];
+  document.getElementById('deptBadge').textContent=currentUser.isAdmin?'🔑 Admin':currentUser.isExec?'📊 ผู้บริหาร':currentUser.isRecorder?'📝 บันทึกผล':currentUser.isNurse?'🧑‍⚕️ พยาบาล':currentUser.isViewer?'👁 ดูอย่างเดียว':DEPT_NAMES[currentUser.dept];
   document.getElementById('deptBadge').style.borderColor=dc;
   document.getElementById('deptBadge').style.background=db;
   document.getElementById('deptBadge').style.color=dc;
-  document.getElementById('topTitle').textContent=currentUser.isAdmin?`ผู้ดูแลระบบ (${currentUser.id})`:currentUser.isExec?'ผู้บริหาร':currentUser.isRecorder?'เจ้าหน้าที่บันทึกผล':currentUser.isViewer?'View Only':currentUser.deptScope?`ศัลยกรรม · ${currentUser.id}`:currentUser.names.join(' · ');
+  document.getElementById('topTitle').textContent=currentUser.isAdmin?`ผู้ดูแลระบบ (${currentUser.id})`:currentUser.isExec?'ผู้บริหาร':currentUser.isRecorder?'เจ้าหน้าที่บันทึกผล':currentUser.isNurse?'Workload พยาบาล':currentUser.isViewer?'View Only':currentUser.deptScope?`ศัลยกรรม · ${currentUser.id}`:currentUser.names.join(' · ');
 
   // ── tab visibility by role ──
   const canSchedule = currentUser.isAdmin || currentUser.isRecorder || isStaff;
   document.getElementById('tabMy').style.display=canSchedule?'block':'none';
   document.getElementById('tabHistory').style.display=(isStaff||currentUser.isAdmin)?'block':'none';
-  document.getElementById('tabCentral').style.display=currentUser.isExec?'none':'block';
+  document.getElementById('tabCentral').style.display=(currentUser.isExec||currentUser.isNurse)?'none':'block';
   document.getElementById('tabLog').style.display=currentUser.isAdmin?'block':'none';
   document.getElementById('tabDashboard').style.display=(currentUser.isExec||currentUser.isRecorder)?'block':'none';
-  if(currentUser.isExec) switchTab('dashboard');
+  document.getElementById('tabNurse').style.display=currentUser.isNurse?'block':'none';
+  if(currentUser.isNurse) switchTab('nurse');
+  else if(currentUser.isExec) switchTab('dashboard');
   else if(currentUser.isViewer) switchTab('central');
   else switchTab('my');
 
@@ -916,7 +953,9 @@ async function loadAllData(){
     try{
       const d=await fbGet('schedule');opsData=d||{};
       const ad=await fbGet('announcements');announceData=ad||{};
+      const nwd=await fbGet('nurse_wl');nurseData=nwd||{};
       setConn(true);renderMyTab();renderCentralTab();
+      if(currentUser.isNurse){const a=document.activeElement;if(!a||a.tagName!=='INPUT')renderNurseDash();}
     }
     catch(e){setConn(false);}
   },8000);
@@ -997,7 +1036,7 @@ function getAnnounce(y,m,w,d,room,session){
 
 // ── TABS ──────────────────────────────────────────────
 function switchTab(t){
-  ['my','history','central','dashboard','log'].forEach(id=>{
+  ['my','history','central','dashboard','nurse','log'].forEach(id=>{
     const capId=id.charAt(0).toUpperCase()+id.slice(1);
     const tab=document.getElementById('tab'+capId);
     const content=document.getElementById('content'+capId);
@@ -1010,6 +1049,7 @@ function switchTab(t){
   if(t==='log') renderAuditLog();
   if(t==='history') renderHistory();
   if(t==='dashboard') renderDashboard();
+  if(t==='nurse') renderNurseDash();
 }
 
 // ── MONTH/WEEK NAV (MY) ──────────────────────────────
@@ -2334,6 +2374,124 @@ function printDashboard(){
   h+=`</table>`;
   document.getElementById('printArea').innerHTML=h;
   window.print();
+}
+
+// ══════════════════════════════════════════════════════
+// ── NURSE WORKLOAD DASHBOARD (Nr01) ───────────────────
+// ══════════════════════════════════════════════════════
+const MAJOR_W=[4.3,8,12.5,15.5,21]; // ประเภท 1..5 (weight ชม./เคส)
+const CAST_W=2.17;
+const PROD_LO=85, PROD_HI=115;
+const NROOMS=['OR-1','OR-2','OR-3','OR-4'];
+function nurseActualMin(o){ if(!o||o.status!=='completed')return null; if(o.timeInOR!=null&&o.timeOutOR!=null&&o.timeOutOR>o.timeInOR)return o.timeOutOR-o.timeInOR; return null; }
+function majorType(m){ if(m<=90)return 1; if(m<=150)return 2; if(m<=210)return 3; if(m<=270)return 4; return 5; }
+function prodZone(p){ if(p<PROD_LO)return {c:'#58a6ff',label:'คนเกิน'}; if(p<=PROD_HI)return {c:'#3fb950',label:'ปกติ'}; return {c:'#f78166',label:'งานหนัก'}; }
+function setNPeriod(p){ nPeriod=p; document.querySelectorAll('#nPeriodBtns .pill').forEach(b=>b.classList.toggle('active',b.getAttribute('data-p')===p)); renderNurseDash(); }
+function shiftNMonth(dir){ nMonth+=dir; if(nMonth>11){nMonth=0;nYear++;} if(nMonth<0){nMonth=11;nYear--;} nWeek=0; renderNurseDash(); }
+function setNWeek(w){nWeek=w;renderNurseDash();}
+function setNDay(d){nDay=d;renderNurseDash();}
+function nurseInit(){ if(nYear!=null)return; const now=new Date(); nYear=now.getFullYear(); nMonth=now.getMonth(); const jd=now.getDay(); if(jd===0||jd===6){ const nm=new Date(now); nm.setDate(now.getDate()+(jd===0?1:2)); nYear=nm.getFullYear(); nMonth=nm.getMonth(); nWeek=findTodayWeek(nYear,nMonth,nm.getDate()); nDay=0; } else { nWeek=findTodayWeek(nYear,nMonth,now.getDate()); nDay=jd-1; } }
+function nursePeriodKeys(){
+  if(nPeriod==='day') return [`${nYear}_${nMonth}_${nWeek}_${nDay}`];
+  if(nPeriod==='week') return [0,1,2,3,4].map(d=>`${nYear}_${nMonth}_${nWeek}_${d}`);
+  const keys=[]; const wks=weeksInMonth(nYear,nMonth);
+  for(let w=0;w<wks;w++) for(let d=0;d<5;d++){ const dt=getDate(nYear,nMonth,w,d); if(dt.getMonth()===nMonth&&dt.getFullYear()===nYear) keys.push(`${nYear}_${nMonth}_${w}_${d}`); }
+  return keys;
+}
+function computeNurseStats(){
+  const keys=nursePeriodKeys();
+  const rooms={}; NROOMS.forEach(r=>rooms[r]={cases:0,wl:0});
+  let castCases=0, totalNurses=0; const roomNurses={};
+  keys.forEach(k=>{
+    const nd=nurseData[k]||{};
+    castCases += (+nd.castCases||0);
+    totalNurses += (+nd.totalNurses||0);
+    const rn=nd.roomNurses||{};
+    [...NROOMS,'cast'].forEach(r=>{ roomNurses[r]=(roomNurses[r]||0)+(+rn[r]||0); });
+  });
+  keys.forEach(k=>{
+    const arr=opsData[k]; if(!Array.isArray(arr))return;
+    arr.forEach(o=>{ const m=nurseActualMin(o); if(m==null)return; if(!rooms[o.room])return; const t=majorType(m); rooms[o.room].cases++; rooms[o.room].wl+=MAJOR_W[t-1]; });
+  });
+  const castWl=castCases*CAST_W;
+  let wlTotal=castWl; NROOMS.forEach(r=>wlTotal+=rooms[r].wl);
+  const completedTotal=NROOMS.reduce((a,r)=>a+rooms[r].cases,0);
+  const totalCases=completedTotal+castCases;
+  const workHours=totalNurses*7;
+  const prodTotal= workHours>0 ? wlTotal/workHours*100 : 0;
+  const roomStats=NROOMS.map(r=>{ const nn=roomNurses[r]||0; return {room:r,cases:rooms[r].cases,wl:rooms[r].wl,nurses:nn,prod: nn>0? rooms[r].wl/(nn*7)*100 : 0}; });
+  const castNn=roomNurses['cast']||0;
+  const cast={room:'cast',cases:castCases,wl:castWl,nurses:castNn,prod: castNn>0? castWl/(castNn*7)*100 : 0};
+  return {keys,rooms:roomStats,cast,castCases,totalNurses,totalCases,completedTotal,wlTotal,workHours,prodTotal};
+}
+function nInput(id,val,fn,w){ return `<span style="display:inline-flex;gap:6px;"><input id="${id}" type="number" min="0" value="${val!=null?val:''}" style="width:${w||58}px;background:var(--bg);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:4px 8px;font-size:.9rem;"><button onclick="${fn}" style="padding:4px 10px;border:1px solid #3fb950;border-radius:6px;background:rgba(63,185,80,.12);color:#3fb950;cursor:pointer;font-size:.75rem;white-space:nowrap;">ยืนยัน</button></span>`; }
+function confirmNurseTotal(){ saveNurseField('totalNurses',Math.max(0,parseInt(document.getElementById('nfTotalNurses').value)||0)); }
+function confirmNurseCast(){ saveNurseField('castCases',Math.max(0,parseInt(document.getElementById('nfCastCases').value)||0)); }
+function confirmRoomNurse(room){ saveNurseField('roomNurse',Math.max(0,parseInt(document.getElementById('nfNurse_'+room).value)||0),room); }
+async function saveNurseField(field,value,room){
+  const k=`${nYear}_${nMonth}_${nWeek}_${nDay}`;
+  showSync('⏳ กำลังบันทึก…','#f778ba');
+  let cur;
+  try{ cur=await fbGet('nurse_wl/'+k); }catch(e){ showSync('⚠ โหลดไม่ได้ ลองใหม่','#f78166'); setConn(false); return; }
+  cur=(cur&&typeof cur==='object'&&!Array.isArray(cur))?cur:{};
+  if(!cur.roomNurses||typeof cur.roomNurses!=='object'||Array.isArray(cur.roomNurses)) cur.roomNurses={};
+  if(field==='totalNurses') cur.totalNurses=value;
+  else if(field==='castCases') cur.castCases=value;
+  else if(field==='roomNurse') cur.roomNurses[room]=value;
+  try{ await fbSet('nurse_wl/'+k,cur); nurseData[k]=cur; showSync('✓ บันทึกแล้ว','#3fb950'); setConn(true); }
+  catch(e){ showSync('⚠ บันทึกไม่สำเร็จ','#f78166'); setConn(false); }
+  renderNurseDash();
+}
+function renderNurseDash(){
+  nurseInit();
+  document.getElementById('nMonthLabel').textContent=`${THAI_MONTHS[nMonth]} ${nYear+543}`;
+  const showWeek=nPeriod!=='month', showDay=nPeriod==='day';
+  document.getElementById('nWeekWrap').style.display=showWeek?'flex':'none';
+  document.getElementById('nDayWrap').style.display=showDay?'flex':'none';
+  if(showWeek) document.getElementById('nWeekBtns').innerHTML=buildMonthWeekNav(nYear,nMonth,nWeek,'setNWeek','nMonthLabel');
+  if(showDay) document.getElementById('nDayBtns').innerHTML=buildDayNav(nYear,nMonth,nWeek,nDay,'setNDay');
+  const s=computeNurseStats();
+  const editable=nPeriod==='day';
+  const dayKey=`${nYear}_${nMonth}_${nWeek}_${nDay}`;
+  const nd=nurseData[dayKey]||{}; const rn=nd.roomNurses||{};
+  let periodLabel;
+  if(nPeriod==='day'){const dt=getDate(nYear,nMonth,nWeek,nDay);periodLabel=`วัน${DAYS[nDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  else if(nPeriod==='week')periodLabel=`สัปดาห์ ${nWeek+1} (${weekRange(nYear,nMonth,nWeek)} ${THAI_MONTHS[nMonth]}) · ${nYear+543}`;
+  else periodLabel=`${THAI_MONTHS[nMonth]} ${nYear+543}`;
+  const pzT=prodZone(s.prodTotal);
+  let h=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">🧑‍⚕️ ${periodLabel}${editable?' · กรอกข้อมูลแล้วกดยืนยัน':' · สรุปรวมทั้งช่วง (กรอกได้เฉพาะรายวัน)'}</div>`;
+  h+=`<div class="kpi-grid">`;
+  h+=`<div class="kpi-card accent"><div class="kpi-label">พยาบาลวันนี้</div><div class="kpi-val" style="color:#f778ba">${s.totalNurses}</div>${editable?nInput('nfTotalNurses',nd.totalNurses,'confirmNurseTotal()'):'<div class="kpi-sub">รวมพยาบาล×วัน</div>'}</div>`;
+  h+=`<div class="kpi-card"><div class="kpi-label">เคสทั้งหมด</div><div class="kpi-val" style="color:#58a6ff">${s.totalCases}</div><div class="kpi-sub">ผ่าตัดเสร็จ ${s.completedTotal} + เฝือก ${s.castCases}</div></div>`;
+  h+=`<div class="kpi-card accent"><div class="kpi-label">WL รวม</div><div class="kpi-val" style="color:#f778ba">${s.wlTotal.toFixed(1)}</div><div class="kpi-sub">ชั่วโมง/วัน</div></div>`;
+  h+=`<div class="kpi-card"><div class="kpi-label">ชม.ทำงานจริง</div><div class="kpi-val">${s.workHours}</div><div class="kpi-sub">${s.totalNurses} คน × 7</div></div>`;
+  h+=`<div class="kpi-card" style="border-color:${pzT.c}"><div class="kpi-label">Productivity รวม</div><div class="kpi-val" style="color:${pzT.c}">${s.totalNurses>0?Math.round(s.prodTotal)+'%':'—'}</div><div class="kpi-sub">${s.totalNurses>0?pzT.label:'ใส่จำนวนพยาบาล'}</div></div>`;
+  h+=`</div>`;
+  h+=`<div class="dash-section"><div class="dash-title">ภาระงานแยกห้อง</div><div class="dash-grid2">`;
+  s.rooms.forEach(r=>{
+    const pz=prodZone(r.prod);
+    h+=`<div class="dash-card" style="border-left:3px solid ${pz.c};border-radius:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-weight:700;">${r.room}</span><span style="font-size:.74rem;color:var(--muted);">เคสเสร็จ ${r.cases}</span></div>
+      <div style="font-size:.76rem;margin-bottom:6px;">Workload: <strong style="color:#f778ba;">${r.wl.toFixed(1)}</strong> ชม.</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.74rem;color:var(--muted);"><span style="min-width:74px;">พยาบาลในห้อง</span>${editable?nInput('nfNurse_'+r.room,rn[r.room],"confirmRoomNurse('"+r.room+"')"):'<strong style="color:var(--text);">'+r.nurses+' คน</strong>'}</div>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:6px;"><span style="font-size:.74rem;color:var(--muted);">Productivity</span><span style="font-weight:700;color:${pz.c};">${r.nurses>0?Math.round(r.prod)+'% · '+pz.label:'—'}</span></div>
+    </div>`;
+  });
+  const cr=s.cast; const cpz=prodZone(cr.prod);
+  h+=`<div class="dash-card" style="border-left:3px solid ${cpz.c};border-radius:0;">
+    <div style="margin-bottom:8px;"><span style="font-weight:700;">ห้องเฝือก</span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.74rem;color:var(--muted);"><span style="min-width:74px;">จำนวนเคส</span>${editable?nInput('nfCastCases',nd.castCases,'confirmNurseCast()'):'<strong style="color:var(--text);">'+cr.cases+'</strong>'}</div>
+    <div style="font-size:.76rem;margin-bottom:6px;">Workload: <strong style="color:#f778ba;">${cr.wl.toFixed(1)}</strong> ชม. <span style="color:var(--muted);font-size:.68rem;">(เคส×2.17)</span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.74rem;color:var(--muted);"><span style="min-width:74px;">พยาบาลในห้อง</span>${editable?nInput('nfNurse_cast',rn['cast'],"confirmRoomNurse('cast')"):'<strong style="color:var(--text);">'+cr.nurses+' คน</strong>'}</div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:6px;"><span style="font-size:.74rem;color:var(--muted);">Productivity</span><span style="font-weight:700;color:${cpz.c};">${cr.nurses>0?Math.round(cr.prod)+'% · '+cpz.label:'—'}</span></div>
+  </div>`;
+  h+=`</div></div>`;
+  h+=`<div class="dash-section"><div class="dash-title">Productivity เทียบมาตรฐาน 85–115%</div><div class="dash-card">`;
+  const bars=[...s.rooms.map(r=>({label:r.room,p:r.prod,n:r.nurses})),{label:'ห้องเฝือก',p:s.cast.prod,n:s.cast.nurses},{label:'รวม',p:s.prodTotal,n:s.totalNurses}];
+  bars.forEach(b=>{ const pz=prodZone(b.p); const w=Math.min(b.p/150*100,100);
+    h+=`<div class="bar-row" style="grid-template-columns:78px 1fr 110px;"><div class="bar-label"${b.label==='รวม'?' style="font-weight:700;"':''}>${b.label}</div><div class="bar-track"><div class="bar-fill" style="width:${b.n>0?w:0}%;background:${pz.c}"></div></div><div class="bar-val">${b.n>0?Math.round(b.p)+'% · '+pz.label:'—'}</div></div>`; });
+  h+=`<div style="font-size:.64rem;color:var(--muted);margin-top:8px;"><span style="color:#58a6ff">▮</span> &lt;85% คนเกิน &nbsp;<span style="color:#3fb950">▮</span> 85–115% ปกติ &nbsp;<span style="color:#f78166">▮</span> &gt;115% งานหนัก</div></div></div>`;
+  document.getElementById('nurseBody').innerHTML=h;
 }
 
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
