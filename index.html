@@ -2059,8 +2059,8 @@ function computeDashStats(){
   live.forEach(o=>{opCount[o.op]=(opCount[o.op]||0)+1;});
   const topOps=Object.entries(opCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const docMin={};
-  live.forEach(o=>{if(!o.doctor)return;docMin[o.doctor]=(docMin[o.doctor]||0)+plannedDur(o);});
-  const topDocs=Object.entries(docMin).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  live.forEach(o=>{if(!o.doctor)return;docMin[o.doctor]=(docMin[o.doctor]||0)+actualDur(o);});
+  const topDocs=Object.entries(docMin).filter(([,m])=>m>0).sort((a,b)=>b[1]-a[1]).slice(0,8);
   let used=0,releasedSlots=0,empty=0;
   const liveByKey={};
   live.forEach(o=>{const k=o._dt.getTime()+'|'+o.room+'|'+o.session;liveByKey[k]=true;});
@@ -2132,10 +2132,14 @@ function renderDashboard(){
     ${kpi('เคสเกินเวลา',s.overruns,'over-run เกินช่วงเวลา',s.overruns>0?'#e3b341':'#9198a1')}
   </div>`;
 
-  h+=`<div class="dash-grid2">
-    <div class="dash-section"><div class="dash-title">การใช้ห้อง รายห้อง</div><div class="dash-card">${barList(s.rooms.map(r=>({label:r.room,val:r.min,cap:r.cap,note:r.cases+' เคส'})))}</div></div>
-    <div class="dash-section"><div class="dash-title">เช้า vs บ่าย</div><div class="dash-card">${barList(s.sessions.map(x=>({label:x.ss==='am'?'☀ เช้า':'🌤 บ่าย',val:x.min,cap:x.cap,note:x.cases+' เคส'})))}</div></div>
-  </div>`;
+  h+=`<div class="dash-section"><div class="dash-title">การใช้ห้อง รายห้อง — ตามแผน vs ใช้จริง</div><div class="dash-card">${s.rooms.map(r=>{
+    const pp=pct(r.min,r.cap), pa=pct(r.act,r.cap);
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:600;margin-bottom:5px;"><span>${r.room}</span><span style="color:var(--muted);font-weight:400;">${r.cases} เคส</span></div>
+      <div class="bar-row" style="grid-template-columns:56px 1fr 50px;margin-bottom:4px;"><div class="bar-label" style="font-weight:400;color:var(--muted2);">ตามแผน</div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(pp,100)}%;background:#58a6ff"></div></div><div class="bar-val">${pp}%</div></div>
+      <div class="bar-row" style="grid-template-columns:56px 1fr 50px;"><div class="bar-label" style="font-weight:400;color:var(--muted2);">ใช้จริง</div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(pa,100)}%;background:#3fb950"></div></div><div class="bar-val">${pa}%</div></div>
+    </div>`;
+  }).join('')}<div style="font-size:.64rem;color:var(--muted);margin-top:2px;"><span style="color:#58a6ff">▮</span> ตามแผน &nbsp; <span style="color:#3fb950">▮</span> ใช้จริง</div></div></div>`;
 
   h+=`<div class="dash-section"><div class="dash-title">รายแผนก — ใช้จริง เทียบ โควต้าที่จัดสรร</div><div class="dash-card">`;
   if(!s.depts.length) h+=`<div style="color:var(--muted);font-size:.78rem;">ไม่มีข้อมูล</div>`;
@@ -2171,7 +2175,7 @@ function renderDashboard(){
     <div class="dash-section"><div class="dash-title">หัตถการที่ทำบ่อย</div><div class="dash-card">${rankList(s.topOps,v=>v+' เคส')||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>
   </div>`;
 
-  h+=`<div class="dash-section"><div class="dash-title">แพทย์ตามเวลาที่ใช้ห้อง</div><div class="dash-card">${rankList(s.topDocs,v=>fmtDur(v))||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>`;
+  h+=`<div class="dash-section"><div class="dash-title">แพทย์ตามเวลาที่ใช้ห้องจริง</div><div class="dash-card">${rankList(s.topDocs,v=>fmtDur(v))||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>`;
 
   h+=`<div class="dash-section"><div class="dash-title">แนวโน้มการใช้ห้อง 6 เดือนล่าสุด</div><div class="dash-card">${trendHtml()}</div>
     <div style="font-size:.64rem;color:var(--muted);margin-top:8px;"><span style="color:#58a6ff">▮</span> ตามแผน &nbsp; <span style="color:#3fb950">▮</span> จริง</div></div>`;
@@ -2274,4 +2278,4 @@ document.getElementById('recordOverlay').addEventListener('click',function(e){if
 </script>
 </body>
 </html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
