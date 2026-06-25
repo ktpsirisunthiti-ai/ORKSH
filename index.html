@@ -598,10 +598,15 @@ button,select,input{font-family:inherit;}
     <div id="recTimesWrap" style="display:none;">
       <div class="time-grid" style="margin-bottom:10px;">
         <div><div class="rec-tlabel">Sign-in</div><input class="fsel" id="recSignIn" type="time" step="300" onchange="onRecTimeChange()"></div>
+        <div></div>
+      </div>
+      <div class="time-grid" style="margin-bottom:10px;">
         <div><div class="rec-tlabel">Time in OR</div><input class="fsel" id="recTimeIn" type="time" step="300" onchange="onRecTimeChange()"></div>
+        <div><div class="rec-tlabel">Time out OR</div><input class="fsel" id="recTimeOut" type="time" step="300" onchange="onRecTimeChange()"></div>
+      </div>
+      <div class="time-grid" style="margin-bottom:10px;">
         <div><div class="rec-tlabel">Procedure start</div><input class="fsel" id="recProcStart" type="time" step="300" onchange="onRecTimeChange()"></div>
         <div><div class="rec-tlabel">Procedure end</div><input class="fsel" id="recProcEnd" type="time" step="300" onchange="onRecTimeChange()"></div>
-        <div><div class="rec-tlabel">Time out OR</div><input class="fsel" id="recTimeOut" type="time" step="300" onchange="onRecTimeChange()"></div>
       </div>
       <div class="dur-hint" id="recDurHint"></div>
     </div>
@@ -926,6 +931,24 @@ async function saveAll(){
   }catch(e){showSync('⚠ บันทึกไม่สำเร็จ','#f78166');setConn(false);}
 }
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveAll,800);}
+
+// บันทึกแบบ merge เฉพาะวันนั้น — ดึงข้อมูลล่าสุดมา merge ก่อนเขียน กันหลายคนบันทึกทับกัน
+async function saveDayMerge(k, opId, newOp){
+  showSync('⏳ กำลังบันทึก…','#58a6ff');
+  let arr;
+  try{ const latest=await fbGet('schedule/'+k); arr=Array.isArray(latest)?latest.slice():[]; }
+  catch(e){ arr=(opsData[k]||[]).slice(); }
+  arr=arr.filter(o=>o&&o.id!==opId);
+  if(newOp) arr.push(newOp);
+  arr.sort((a,b)=>(a.startMin||0)-(b.startMin||0));
+  opsData[k]=arr;
+  try{
+    await fbSet('schedule/'+k, arr.length?arr:null);
+    try{localStorage.setItem('or-sched-bk',JSON.stringify(opsData));}catch(e){}
+    showSync('✓ บันทึกแล้ว','#3fb950'); setConn(true);
+  }catch(e){ showSync('⚠ บันทึกไม่สำเร็จ','#f78166'); setConn(false); }
+  renderMyTab(); renderCentralTab();
+}
 
 // ── SLOT ANNOUNCEMENT (ไม่ใช้ห้องนี้) ──────────────────
 function announceKey(room,session){
@@ -1389,12 +1412,12 @@ function saveRecord(){
   } else {
     patch={status:'scheduled',signIn:null,timeInOR:null,timeOutOR:null,procStart:null,procEnd:null,cancelReason:null,statusBy:currentUser.id,statusTs:Date.now()};
   }
-  opsData[k]=ops.map(o=>o.id===recEditId?{...o,...patch}:o);
-  const op=opsData[k].find(o=>o.id===recEditId);
+  const _prev=ops.find(o=>o.id===recEditId)||{};
+  const _newOp={..._prev,...patch};
   const dt=getDate(curYear,curMonth,curWeek,curDay);
   const stTxt={completed:'✓เสร็จ',cancelled:'✗ยกเลิก',scheduled:'📋ตามแผน'}[recStatus]||'';
-  writeLog('edit',`บันทึกผล · ${recSlot.room} ${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} · ${op?op.doctor:''} · ${stTxt}`);
-  scheduleSave(); closeRecordModal(); renderMyTab(); renderCentralTab();
+  writeLog('edit',`บันทึกผล · ${recSlot.room} ${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} · ${_newOp.doctor||''} · ${stTxt}`);
+  saveDayMerge(k, recEditId, _newOp); closeRecordModal();
 }
 function parseTimeToMin(v){
   if(!v||v.indexOf(':')<0) return null;
@@ -1884,12 +1907,15 @@ function commitSaveOp(){
   const position=document.getElementById('fPosition').value||null;
   const anesthesia=document.getElementById('fAnesthesia').value||null;
 
+  let _theId, _newOp;
   if(editId){
-    ops=ops.map(o=>o.id===editId?{...o,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,position,anesthesia}:o);
+    _theId=editId;
+    const _prev=ops.find(o=>o.id===editId)||{};
+    _newOp={..._prev,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,position,anesthesia};
   }else{
-    ops=[...ops,{id:genId(),room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,status:'scheduled',position,anesthesia}];
+    _theId=genId();
+    _newOp={id:_theId,room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,status:'scheduled',position,anesthesia};
   }
-  opsData[k]=ops;
 
   // if this slot had an "ไม่ใช้ห้องนี้" announcement, clear it since it's now in use
   if(!editId){
@@ -1907,7 +1933,7 @@ function commitSaveOp(){
   } else {
     writeLog('add',`${modalSlot.room} ${DAYS[curDay]} ${dateStr} · ${doc} · ${opVal}`);
   }
-  scheduleSave();closeModal();renderMyTab();renderCentralTab();
+  saveDayMerge(k,_theId,_newOp);closeModal();
 }
 function deleteOp(){
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
@@ -1917,8 +1943,7 @@ function deleteOp(){
     const dateStr=`${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]}`;
     writeLog('delete',`${op.room} ${DAYS[curDay]} ${dateStr} · ${op.doctor} · ${op.op}`);
   }
-  opsData[k]=getOps(k).filter(o=>o.id!==editId);
-  scheduleSave();closeModal();renderMyTab();renderCentralTab();
+  saveDayMerge(k, editId, null);closeModal();
 }
 
 // ── EXPORT ────────────────────────────────────────────
@@ -2114,6 +2139,10 @@ function renderDashboard(){
 
   const s=computeDashStats();
   const bookedU=pct(s.bookedMin,s.availMin), actU=pct(s.actMin,s.availMin);
+  const r123=s.rooms.filter(r=>r.room!=='OR-4');
+  const r123Min=r123.reduce((t,r)=>t+r.min,0), r123Act=r123.reduce((t,r)=>t+r.act,0), r123Cap=r123.reduce((t,r)=>t+r.cap,0);
+  const r4=s.rooms.find(r=>r.room==='OR-4')||{min:0,act:0,cap:0,cases:0};
+  const u123p=pct(r123Min,r123Cap), u123a=pct(r123Act,r123Cap), u4p=pct(r4.min,r4.cap), u4a=pct(r4.act,r4.cap);
   const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
 
   let periodLabel;
@@ -2124,8 +2153,10 @@ function renderDashboard(){
   let h=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">📊 ${periodLabel}</div>`;
 
   h+=`<div class="kpi-grid">
-    ${kpi('การใช้ห้อง (ตามแผน)',bookedU+'%',`จอง ${Math.round(s.bookedMin)} / ${s.availMin} นาที`,utilColor(bookedU),true)}
-    ${kpi('การใช้ห้อง (จริง)',actU+'%',`ผ่าจริง ${Math.round(s.actMin)} นาที`,utilColor(actU),true)}
+    ${kpi('การใช้ห้อง 1-3 (ตามแผน)',u123p+'%',`จอง ${Math.round(r123Min)} / ${r123Cap} นาที`,utilColor(u123p),true)}
+    ${kpi('การใช้ห้อง 1-3 (จริง)',u123a+'%',`ผ่าจริง ${Math.round(r123Act)} นาที`,utilColor(u123a),true)}
+    ${kpi('การใช้ห้อง 4 (ตามแผน)',u4p+'%',`จอง ${Math.round(r4.min)} / ${r4.cap} นาที`,utilColor(u4p),true)}
+    ${kpi('การใช้ห้อง 4 (จริง)',u4a+'%',`ผ่าจริง ${Math.round(r4.act)} นาที`,utilColor(u4a),true)}
     ${kpi('เคสทั้งหมด',s.bookedCases,`เสร็จ ${s.completed} · ยกเลิก ${s.cancelled}`,'#58a6ff')}
     ${kpi('อัตรายกเลิก',cancelRate+'%',`${s.cancelled} จาก ${s.bookedCases+s.cancelled} เคส`,cancelRate>15?'#f78166':'#9198a1')}
     ${kpi('Slot ที่ใช้',`${s.used}/${s.totalSlots}`,`คืน ${s.releasedSlots} · ว่าง ${s.empty}`,'#3fb950')}
