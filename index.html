@@ -645,8 +645,8 @@ applyTheme();
 
 // ── FIREBASE ──────────────────────────────────────────
 const FB = "https://orksh-840b3-default-rtdb.asia-southeast1.firebasedatabase.app";
-async function fbGet(p){ const r=await fetch(`${FB}/${p}.json`); return r.json(); }
-async function fbSet(p,d){ await fetch(`${FB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); }
+async function fbGet(p){ const r=await fetch(`${FB}/${p}.json`); if(!r.ok) throw new Error('GET '+r.status); return r.json(); }
+async function fbSet(p,d){ const r=await fetch(`${FB}/${p}.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); if(!r.ok) throw new Error('PUT '+r.status); return r.json(); }
 
 // ── DOCTOR CONFIG ─────────────────────────────────────
 const DEPT_NAMES={obstetrics:"OB-GYN",surgery:"ศัลยกรรม",orthopedics:"ออร์โธปีดิกส์",ophthalmology:"จักษุ",neurosurgery:"ศัลย์ประสาท",maxillo:"Maxillo"};
@@ -932,21 +932,33 @@ async function saveAll(){
 }
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveAll,800);}
 
-// บันทึกแบบ merge เฉพาะวันนั้น — ดึงข้อมูลล่าสุดมา merge ก่อนเขียน กันหลายคนบันทึกทับกัน
+// บันทึกแบบ merge เฉพาะวันนั้น — โหลดล่าสุด + verify หลังเขียน กันข้อมูลทับ/หายเงียบ
 async function saveDayMerge(k, opId, newOp){
   showSync('⏳ กำลังบันทึก…','#58a6ff');
   let arr;
-  try{ const latest=await fbGet('schedule/'+k); arr=Array.isArray(latest)?latest.slice():[]; }
-  catch(e){ arr=(opsData[k]||[]).slice(); }
+  try{
+    const latest=await fbGet('schedule/'+k);
+    arr=Array.isArray(latest)?latest.slice():[];
+  }catch(e){
+    // โหลดข้อมูลล่าสุดไม่ได้ → ไม่เขียนทับด้วยของเก่า ให้ลองใหม่
+    showSync('⚠ โหลดข้อมูลล่าสุดไม่ได้ — ยังไม่บันทึก ลองใหม่','#f78166'); setConn(false);
+    renderMyTab(); renderCentralTab(); return;
+  }
   arr=arr.filter(o=>o&&o.id!==opId);
   if(newOp) arr.push(newOp);
   arr.sort((a,b)=>(a.startMin||0)-(b.startMin||0));
-  opsData[k]=arr;
   try{
     await fbSet('schedule/'+k, arr.length?arr:null);
+    // verify: อ่านกลับมายืนยันว่าบันทึกขึ้นจริง
+    const check=await fbGet('schedule/'+k);
+    const present=Array.isArray(check)&&check.some(o=>o&&o.id===opId);
+    if(newOp ? !present : present) throw new Error('verify failed');
+    opsData[k]=arr; // อัปเดต local เฉพาะเมื่อยืนยันสำเร็จ
     try{localStorage.setItem('or-sched-bk',JSON.stringify(opsData));}catch(e){}
     showSync('✓ บันทึกแล้ว','#3fb950'); setConn(true);
-  }catch(e){ showSync('⚠ บันทึกไม่สำเร็จ','#f78166'); setConn(false); }
+  }catch(e){
+    showSync('⚠ บันทึกไม่สำเร็จ — ลองใหม่','#f78166'); setConn(false);
+  }
   renderMyTab(); renderCentralTab();
 }
 
@@ -1340,8 +1352,8 @@ function openEdit(id,room,session){
   if(currentUser.isRecorder){ openRecordModal(op,room,session); return; }
   editId=id;modalSlot={room,session};
   buildModalDocs();
-  buildTimeSelects(session,op.startMin,op.endMin);
   setDocVal(op.doctor);
+  buildTimeSelects(session,op.startMin,op.endMin);
   buildOpSelect();
   setOpVal(op.op);
   document.getElementById('fDiag').value=op.diagnosis||'';
@@ -1428,6 +1440,22 @@ function closeModal(){document.getElementById('overlay').classList.add('hidden')
 
 // admin + recorder get full access to all doctors / all departments in the modal
 const fullAcc=()=>currentUser&&(currentUser.isAdmin||currentUser.isRecorder);
+function currentModalDept(){
+  if(!currentUser) return 'surgery';
+  if(currentUser.deptScope) return currentUser.deptScope;
+  if(fullAcc()){ const v=document.getElementById('fDoc').value; return (v&&v!=='__OTHER__')?(getDeptFromDoctor(v)||'surgery'):'surgery'; }
+  return currentUser.dept;
+}
+function refreshMinuteStep(){
+  const step=currentModalDept()==='ophthalmology'?10:15;
+  ['fStartM','fEndM'].forEach(id=>{
+    const sel=document.getElementById(id); if(!sel) return;
+    const cur=sel.value;
+    let html=''; for(let m=0;m<60;m+=step) html+=`<option value="${m}">${String(m).padStart(2,'0')}</option>`;
+    sel.innerHTML=html;
+    sel.value = [...sel.options].some(o=>o.value===String(cur)) ? cur : String(Math.floor((+cur||0)/step)*step);
+  });
+}
 function getDocVal(){
   const v=document.getElementById('fDoc').value;
   return v==='__OTHER__' ? document.getElementById('fDocCustom').value.trim() : v;
@@ -1489,6 +1517,7 @@ function onDocChange(){
     document.getElementById('fOp').innerHTML=`<option value="อื่นๆ (พิมพ์เอง)">อื่นๆ (พิมพ์เอง)</option>`; // ไม่มีแผนก → พิมพ์ operation เอง
     onOpSel();
   } else if(fullAcc()){ buildOpSelect(); onOpSel(); }
+  refreshMinuteStep();
   checkConflict();
 }
 const SIDE_REQUIRED_OPS=["Explore lap ovarian cystectomy","Explore lap salpingectomy","PE + IOL","Ptx","IVT","Blepharoplasty","PPV"];
@@ -1586,8 +1615,9 @@ function setOpVal(val){
 
 function buildTimeSelects(session,defS,defE){
   const st=SESSION_TIMES[session];
-  const startHourMin=Math.floor(st.start/60), startHourMax=Math.floor((st.end-15)/60);
-  const endHourMin=Math.floor((st.start+15)/60), endHourMax=Math.floor(st.end/60);
+  let startHourMin=Math.floor(st.start/60), startHourMax=Math.floor((st.end-15)/60);
+  let endHourMin=Math.floor((st.start+15)/60), endHourMax=Math.floor(st.end/60);
+  if(session==='am'){ startHourMax=12; endHourMax=13; } // คาบเช้า: เริ่มได้ถึง 12:00 จบได้ถึง ~13:00
 
   // build hour options
   function hourOpts(hMin,hMax){
@@ -1595,7 +1625,10 @@ function buildTimeSelects(session,defS,defE){
     for(let h=hMin;h<=hMax;h++) html+=`<option value="${h}">${String(h).padStart(2,'0')}</option>`;
     return html;
   }
-  const minOpts='<option value="0">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>';
+  // จักษุ → ทีละ 10 นาที, อื่นๆ → ทีละ 15 นาที
+  const step = currentModalDept()==='ophthalmology' ? 10 : 15;
+  let minOpts='';
+  for(let m=0;m<60;m+=step) minOpts+=`<option value="${m}">${String(m).padStart(2,'0')}</option>`;
 
   document.getElementById('fStartH').innerHTML=hourOpts(startHourMin,startHourMax);
   document.getElementById('fStartM').innerHTML=minOpts;
