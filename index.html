@@ -147,6 +147,9 @@ button,select,input{font-family:inherit;}
 .summary-table{background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;}
 .s-row{display:grid;grid-template-columns:55px 70px 80px 1fr 60px;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:.78rem;cursor:pointer;transition:background .1s;}
 .s-row:last-child{border-bottom:none;}
+.s-row.byroom{grid-template-columns:78px 92px 1fr 58px;}
+.summary-room-h{font-size:.74rem;font-weight:700;color:var(--dc,#58a6ff);background:var(--surface2);border:1px solid var(--border);border-bottom:none;border-radius:7px 7px 0 0;padding:6px 14px;margin-top:10px;}
+.summary-room-h + .summary-table{border-top-left-radius:0;border-top-right-radius:0;}
 .s-row:hover{background:var(--surface2);}
 .s-room,.s-time{font-family:'IBM Plex Mono',monospace;color:var(--muted2);display:flex;align-items:center;}
 .s-doc{font-weight:700;display:flex;align-items:center;}
@@ -594,6 +597,7 @@ button,select,input{font-family:inherit;}
     </div>
     <div id="recTimesWrap" style="display:none;">
       <div class="time-grid" style="margin-bottom:10px;">
+        <div><div class="rec-tlabel">Sign-in (รับเข้าห้อง)</div><input class="fsel" id="recSignIn" type="time" step="300" onchange="onRecTimeChange()"></div>
         <div><div class="rec-tlabel">Time in OR</div><input class="fsel" id="recTimeIn" type="time" step="300" onchange="onRecTimeChange()"></div>
         <div><div class="rec-tlabel">Procedure start</div><input class="fsel" id="recProcStart" type="time" step="300" onchange="onRecTimeChange()"></div>
         <div><div class="rec-tlabel">Procedure end</div><input class="fsel" id="recProcEnd" type="time" step="300" onchange="onRecTimeChange()"></div>
@@ -862,7 +866,7 @@ async function loadAllData(){
   document.getElementById('deptBadge').style.borderColor=dc;
   document.getElementById('deptBadge').style.background=db;
   document.getElementById('deptBadge').style.color=dc;
-  document.getElementById('topTitle').textContent=currentUser.isAdmin?`ผู้ดูแลระบบ (${currentUser.id})`:currentUser.isExec?'ผู้บริหาร':currentUser.isRecorder?'เจ้าหน้าที่บันทึกผล':currentUser.isViewer?'View Only':currentUser.names.join(' · ');
+  document.getElementById('topTitle').textContent=currentUser.isAdmin?`ผู้ดูแลระบบ (${currentUser.id})`:currentUser.isExec?'ผู้บริหาร':currentUser.isRecorder?'เจ้าหน้าที่บันทึกผล':currentUser.isViewer?'View Only':currentUser.deptScope?`ศัลยกรรม · ${currentUser.id}`:currentUser.names.join(' · ');
 
   // ── tab visibility by role ──
   const canSchedule = currentUser.isAdmin || currentUser.isRecorder || isStaff;
@@ -1028,10 +1032,14 @@ function renderMyTab(){
   // ── slot info panel ──
   const allSlots=currentUser.slots;
   let infoHtml='';
-  if(currentUser.isAdmin||currentUser.isRecorder){
+  if(currentUser.isAdmin||currentUser.isRecorder||currentUser.deptScope){
     infoHtml=currentUser.isRecorder
       ? `<div style="background:rgba(121,192,255,.08);border:1px solid #79c0ff;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.82rem;color:#79c0ff;">
           📝 <strong>โหมดบันทึกผล</strong> — เปิดเคสเพื่อกด "เสร็จ" / "ยกเลิก" และกรอกเวลาจริง (ทุกห้อง ทุกแพทย์)
+        </div>`
+      : currentUser.deptScope
+      ? `<div style="background:rgba(63,185,80,.08);border:1px solid #3fb950;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.82rem;color:#3fb950;">
+          <strong>โหมดศัลยกรรม</strong> — เพิ่มเคสได้ทุกห้องทุกวัน เลือกได้เฉพาะแพทย์ศัลยกรรม
         </div>`
       : `<div style="background:rgba(88,166,255,.08);border:1px solid #58a6ff;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.82rem;color:#58a6ff;">
           🔑 <strong>Admin Mode</strong> — เข้าถึงได้ทุกห้อง ทุกวัน ทุกแพทย์
@@ -1118,23 +1126,29 @@ function renderMyTab(){
   }
   document.getElementById('slotGrid').innerHTML=html;
 
-  // summary
-  const allOps=[...ops].sort((a,b)=>a.startMin-b.startMin);
+  // summary — แยกตามห้อง เรียงตามเวลา
   const sec=document.getElementById('summarySection');
-  if(!allOps.length||daySlots.length===0){sec.innerHTML='';return;}
+  const sumOps=ops.filter(o=>daySlots.some(s=>s.room===o.room&&s.session===o.session));
+  if(!sumOps.length||daySlots.length===0){sec.innerHTML='';return;}
   const dt=getDate(curYear,curMonth,curWeek,curDay);
-  let sum=`<div class="summary-title">สรุปตาราง · วัน${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}</div><div class="summary-table">`;
-  allOps.filter(o=>daySlots.some(s=>s.room===o.room&&s.session===o.session)).forEach(op=>{
-    const conflict=ops.some(o=>o.id!==op.id&&o.doctor===op.doctor&&overlaps(op,o));
-    sum+=`<div class="s-row" onclick="openEdit('${op.id}','${op.room}','${op.session}')">
-      <div class="s-room">${op.room}</div>
-      <div class="s-time">${minToTime(op.startMin)}–${minToTime(op.endMin)}</div>
-      <div class="s-doc" style="color:${conflict?'#e3b341':dc}">${op.doctor}</div>
-      <div class="s-op">${op.op}</div>
-      <div class="s-dur">${fmtDur(op.endMin-op.startMin)}</div>
-    </div>`;
+  let sum=`<div class="summary-title">สรุปตาราง · วัน${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}</div>`;
+  ALL_ROOMS.forEach(room=>{
+    const roomOps=sumOps.filter(o=>o.room===room).sort((a,b)=>a.startMin-b.startMin);
+    if(!roomOps.length) return;
+    const roomMin=roomOps.reduce((t,o)=>t+(o.endMin-o.startMin),0);
+    sum+=`<div class="summary-room-h">${room}<span style="float:right;font-weight:400;color:var(--muted);">${roomOps.length} เคส · ${fmtDur(roomMin)}</span></div><div class="summary-table">`;
+    roomOps.forEach(op=>{
+      const conflict=ops.some(o=>o.id!==op.id&&o.doctor===op.doctor&&overlaps(op,o));
+      sum+=`<div class="s-row byroom" onclick="openEdit('${op.id}','${op.room}','${op.session}')">
+        <div class="s-time">${minToTime(op.startMin)}–${minToTime(op.endMin)}</div>
+        <div class="s-doc" style="color:${conflict?'#e3b341':dc}">${op.doctor}</div>
+        <div class="s-op">${op.op}</div>
+        <div class="s-dur">${fmtDur(op.endMin-op.startMin)}</div>
+      </div>`;
+    });
+    sum+=`</div>`;
   });
-  sec.innerHTML=sum+'</div>';
+  sec.innerHTML=sum;
 
   const anyConflict=ops.some(op=>ops.some(o=>o.id!==op.id&&o.doctor===op.doctor&&overlaps(op,o)));
   document.getElementById('conflictBanner').classList.toggle('show',anyConflict);
@@ -1204,7 +1218,7 @@ async function renderCentralTab(){
 
 function getDeptFromDoctor(name){
   for(const doc of Object.values(USERS_BY_ID)){
-    if(doc.isAdmin || doc.isViewer || doc.isExec || doc.isRecorder) continue; // skip non-doctor accounts
+    if(doc.isAdmin || doc.isViewer || doc.isExec || doc.isRecorder || doc.deptScope) continue; // skip non-doctor accounts
     if(doc.names && doc.names.includes(name))return doc.dept;
   }
   return 'surgery';
@@ -1327,6 +1341,7 @@ function openRecordModal(op,room,session){
   document.getElementById('recOp').textContent=(op.diagnosis?op.diagnosis+' · ':'')+op.op;
   recStatus=op.status||'scheduled';
   buildRecStatusBtns(recStatus);
+  document.getElementById('recSignIn').value   = op.signIn!=null?minToTime(op.signIn):minToTime(op.startMin);
   document.getElementById('recTimeIn').value   = op.timeInOR!=null?minToTime(op.timeInOR):minToTime(op.startMin);
   document.getElementById('recProcStart').value= op.procStart!=null?minToTime(op.procStart):minToTime(op.startMin);
   document.getElementById('recProcEnd').value  = op.procEnd!=null?minToTime(op.procEnd):minToTime(op.endMin);
@@ -1347,12 +1362,15 @@ function refreshRecFields(){
   if(recStatus==='completed') onRecTimeChange();
 }
 function onRecTimeChange(){
+  const sin=parseTimeToMin(document.getElementById('recSignIn').value);
   const tin=parseTimeToMin(document.getElementById('recTimeIn').value);
   const tout=parseTimeToMin(document.getElementById('recTimeOut').value);
   const h=document.getElementById('recDurHint');
-  if(tin!=null&&tout!=null&&tout>tin){h.textContent='⏱ ใช้ห้อง '+fmtDur(tout-tin);h.style.color='#3fb950';}
-  else if(tin!=null&&tout!=null){h.textContent='⚠ Time out OR ต้องมากกว่า Time in OR';h.style.color='#f78166';}
-  else h.textContent='';
+  if(tin!=null&&tout!=null&&tout<=tin){h.textContent='⚠ Time out OR ต้องมากกว่า Time in OR';h.style.color='#f78166';return;}
+  const parts=[];
+  if(sin!=null&&tin!=null&&tin>=sin) parts.push('รอเข้าห้อง '+fmtDur(tin-sin));
+  if(tin!=null&&tout!=null&&tout>tin) parts.push('ใช้ห้อง '+fmtDur(tout-tin));
+  h.textContent=parts.length?'⏱ '+parts.join(' · '):'';h.style.color='#3fb950';
 }
 function saveRecord(){
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
@@ -1364,11 +1382,12 @@ function saveRecord(){
     const ps=parseTimeToMin(document.getElementById('recProcStart').value);
     const pe=parseTimeToMin(document.getElementById('recProcEnd').value);
     if(tin==null||tout==null||tout<=tin){ alert('กรุณากรอก Time in / Time out OR ให้ถูกต้อง'); return; }
-    patch={status:'completed',timeInOR:tin,timeOutOR:tout,procStart:ps,procEnd:pe,cancelReason:null,statusBy:currentUser.id,statusTs:Date.now()};
+    const sin=parseTimeToMin(document.getElementById('recSignIn').value);
+    patch={status:'completed',signIn:sin,timeInOR:tin,timeOutOR:tout,procStart:ps,procEnd:pe,cancelReason:null,statusBy:currentUser.id,statusTs:Date.now()};
   } else if(recStatus==='cancelled'){
-    patch={status:'cancelled',timeInOR:null,timeOutOR:null,procStart:null,procEnd:null,cancelReason:document.getElementById('recCancelReason').value.trim()||null,statusBy:currentUser.id,statusTs:Date.now()};
+    patch={status:'cancelled',signIn:null,timeInOR:null,timeOutOR:null,procStart:null,procEnd:null,cancelReason:document.getElementById('recCancelReason').value.trim()||null,statusBy:currentUser.id,statusTs:Date.now()};
   } else {
-    patch={status:'scheduled',timeInOR:null,timeOutOR:null,procStart:null,procEnd:null,cancelReason:null,statusBy:currentUser.id,statusTs:Date.now()};
+    patch={status:'scheduled',signIn:null,timeInOR:null,timeOutOR:null,procStart:null,procEnd:null,cancelReason:null,statusBy:currentUser.id,statusTs:Date.now()};
   }
   opsData[k]=ops.map(o=>o.id===recEditId?{...o,...patch}:o);
   const op=opsData[k].find(o=>o.id===recEditId);
@@ -1403,7 +1422,7 @@ function buildModalDocs(){
     let html='';
     Object.entries(DEPT_NAMES).forEach(([deptId,deptName])=>{
       const docs=Object.values(USERS_BY_ID)
-        .filter(d=>!d.isAdmin && !d.isViewer && !d.isExec && !d.isRecorder && d.dept===deptId)
+        .filter(d=>!d.isAdmin && !d.isViewer && !d.isExec && !d.isRecorder && !d.deptScope && d.dept===deptId)
         .flatMap(d=>d.names||[]).filter(Boolean);
       if(!docs.length)return;
       html+=`<optgroup label="${deptName}">`;
@@ -1412,6 +1431,11 @@ function buildModalDocs(){
     });
     html+=`<optgroup label="อื่นๆ"><option value="__OTHER__">✎ แพทย์อื่นๆ (ระบุชื่อ)</option></optgroup>`;
     sel.innerHTML=html;
+  } else if(currentUser.deptScope){
+    const docs=Object.values(USERS_BY_ID)
+      .filter(d=>!d.isAdmin && !d.isViewer && !d.isExec && !d.isRecorder && !d.deptScope && d.dept===currentUser.deptScope)
+      .flatMap(d=>d.names||[]).filter(Boolean);
+    sel.innerHTML=docs.map(n=>`<option value="${n}">${n}</option>`).join('');
   } else {
     sel.innerHTML=currentUser.names.map(n=>`<option value="${n}">${n}</option>`).join('');
   }
@@ -1921,7 +1945,17 @@ const SESS_LEN={am:240,pm:180};
 const DAY_CAP=(SESS_LEN.am+SESS_LEN.pm)*ALL_ROOMS.length;
 
 function dashInit(){
-  if(dYear==null){ dYear=curYear; dMonth=curMonth; dWeek=curWeek; dDay=curDay; }
+  if(dYear!=null) return;
+  const now=new Date();
+  dYear=now.getFullYear(); dMonth=now.getMonth();
+  const jsDay=now.getDay();
+  if(jsDay===0||jsDay===6){ // weekend → next Monday
+    const nm=new Date(now); nm.setDate(now.getDate()+(jsDay===0?1:2));
+    dYear=nm.getFullYear(); dMonth=nm.getMonth();
+    dWeek=findTodayWeek(dYear,dMonth,nm.getDate()); dDay=0;
+  } else {
+    dWeek=findTodayWeek(dYear,dMonth,now.getDate()); dDay=jsDay-1; // Mon=0..Fri=4
+  }
 }
 function setDashPeriod(p){
   dPeriod=p;
@@ -1980,8 +2014,9 @@ function actualDur(o){
   return plannedDur(o);
 }
 function isOverrun(o){
-  if(isCancelled(o))return false;
-  const end=(o.status==='completed'&&o.timeOutOR!=null)?o.timeOutOR:((o.status==='completed'&&o.actualEndMin!=null)?o.actualEndMin:o.endMin);
+  if(o.status!=='completed')return false; // นับเฉพาะเคสที่บันทึกผลแล้ว
+  const end=(o.timeOutOR!=null)?o.timeOutOR:o.actualEndMin; // ใช้เวลาออกห้องจริง
+  if(end==null)return false;
   return end>(SESSION_TIMES[o.session]?SESSION_TIMES[o.session].end:99999);
 }
 
@@ -2024,7 +2059,7 @@ function computeDashStats(){
   live.forEach(o=>{opCount[o.op]=(opCount[o.op]||0)+1;});
   const topOps=Object.entries(opCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const docMin={};
-  live.forEach(o=>{docMin[o.doctor]=(docMin[o.doctor]||0)+plannedDur(o);});
+  live.forEach(o=>{if(!o.doctor)return;docMin[o.doctor]=(docMin[o.doctor]||0)+plannedDur(o);});
   const topDocs=Object.entries(docMin).sort((a,b)=>b[1]-a[1]).slice(0,8);
   let used=0,releasedSlots=0,empty=0;
   const liveByKey={};
@@ -2133,10 +2168,10 @@ function renderDashboard(){
         <div style="width:${pct(s.mix.emergency,mixTot)}%;background:#f78166"></div>
       </div>
     </div></div>
-    <div class="dash-section"><div class="dash-title">หัตถการที่ทำบ่อย</div><div class="dash-card">${rankList(s.topOps,' เคส')||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>
+    <div class="dash-section"><div class="dash-title">หัตถการที่ทำบ่อย</div><div class="dash-card">${rankList(s.topOps,v=>v+' เคส')||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>
   </div>`;
 
-  h+=`<div class="dash-section"><div class="dash-title">แพทย์ตามเวลาที่ใช้ห้อง</div><div class="dash-card">${rankList(s.topDocs.map(([n,m])=>[n,fmtDur(m)]),'')||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>`;
+  h+=`<div class="dash-section"><div class="dash-title">แพทย์ตามเวลาที่ใช้ห้อง</div><div class="dash-card">${rankList(s.topDocs,v=>fmtDur(v))||'<div style="color:var(--muted);font-size:.78rem;">—</div>'}</div></div>`;
 
   h+=`<div class="dash-section"><div class="dash-title">แนวโน้มการใช้ห้อง 6 เดือนล่าสุด</div><div class="dash-card">${trendHtml()}</div>
     <div style="font-size:.64rem;color:var(--muted);margin-top:8px;"><span style="color:#58a6ff">▮</span> ตามแผน &nbsp; <span style="color:#3fb950">▮</span> จริง</div></div>`;
@@ -2161,15 +2196,14 @@ function barList(rows){
     </div>`;
   }).join('');
 }
-function rankList(entries,suffix){
-  const max=entries.length?entries[0][1]:0;
+function rankList(entries,fmt){
+  const max=entries.length?Math.max(...entries.map(e=>e[1])):0;
   return entries.map(([name,val])=>{
-    const numeric=typeof val==='number';
-    const w=numeric&&max>0?Math.round(val/max*100):60;
+    const w=max>0?Math.max(5,Math.round(val/max*100)):0;
     return `<div class="bar-row">
       <div class="bar-label" title="${name}">${name}</div>
       <div class="bar-track"><div class="bar-fill" style="width:${w}%;background:#58a6ff"></div></div>
-      <div class="bar-val">${val}${suffix}</div>
+      <div class="bar-val">${fmt?fmt(val):val}</div>
     </div>`;
   }).join('');
 }
