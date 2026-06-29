@@ -740,6 +740,7 @@ const DOCTORS=[];
 
 // ── STATE ─────────────────────────────────────────────
 let currentUser=null, opsData={}, saveTimer=null, editId=null, modalSlot=null, selUrgency='elective', selStatus='scheduled';
+let activeTab='my';
 let announceData={}; // { "year_month_week_day_room_session": {doctor, names, note, ts} }
 
 // Start from today June 9 2026
@@ -948,17 +949,30 @@ async function loadAllData(){
   renderMyTab();
   renderCentralTab();
 
-  // poll every 8s
+  // poll every 15s — pause when tab hidden; fetch only the day(s) being viewed
+  // (full schedule only when on an aggregating tab: dashboard/history/nurse)
   setInterval(async()=>{
+    if(document.visibilityState==='hidden')return;
     try{
-      const d=await fbGet('schedule');opsData=d||{};
+      if(activeTab==='dashboard'||activeTab==='history'||activeTab==='nurse'){
+        const d=await fbGet('schedule');opsData=d||{};
+      }else{
+        const keys=[...new Set([
+          `${curYear}_${curMonth}_${curWeek}_${curDay}`,
+          `${cYear}_${cMonth}_${cWeek}_${cDay}`
+        ])];
+        for(const k of keys){
+          const dd=await fbGet('schedule/'+k);
+          if(dd==null) delete opsData[k]; else opsData[k]=dd;
+        }
+      }
       const ad=await fbGet('announcements');announceData=ad||{};
       const nwd=await fbGet('nurse_wl');nurseData=nwd||{};
       setConn(true);renderMyTab();renderCentralTab();
       if(currentUser.isNurse){const a=document.activeElement;if(!a||a.tagName!=='INPUT')renderNurseDash();}
     }
     catch(e){setConn(false);}
-  },8000);
+  },15000);
 }
 
 async function saveAll(){
@@ -970,6 +984,8 @@ async function saveAll(){
   }catch(e){showSync('⚠ บันทึกไม่สำเร็จ','#f78166');setConn(false);}
 }
 function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveAll,800);}
+// full refresh — used by aggregating tabs (dashboard/history/nurse) which read all days
+async function refreshAllSchedule(){try{const d=await fbGet('schedule');if(d)opsData=d;setConn(true);}catch(e){setConn(false);}}
 
 // บันทึกแบบ merge เฉพาะวันนั้น — โหลดล่าสุด + verify หลังเขียน กันข้อมูลทับ/หายเงียบ
 async function saveDayMerge(k, opId, newOp){
@@ -1046,10 +1062,11 @@ function switchTab(t){
       content.classList.toggle('show', t===id);
     }
   });
+  activeTab=t;
   if(t==='log') renderAuditLog();
-  if(t==='history') renderHistory();
-  if(t==='dashboard') renderDashboard();
-  if(t==='nurse') renderNurseDash();
+  if(t==='history'){ renderHistory(); refreshAllSchedule().then(renderHistory); }
+  if(t==='dashboard'){ renderDashboard(); refreshAllSchedule().then(renderDashboard); }
+  if(t==='nurse'){ renderNurseDash(); refreshAllSchedule().then(renderNurseDash); }
 }
 
 // ── MONTH/WEEK NAV (MY) ──────────────────────────────
