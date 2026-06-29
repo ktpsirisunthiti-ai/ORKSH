@@ -517,11 +517,19 @@ button,select,input{font-family:inherit;}
       <select class="fsel" id="fDoc" onchange="onDocChange()"></select>
       <input class="fsel" id="fDocCustom" type="text" placeholder="พิมพ์ชื่อแพทย์..." style="display:none;margin-top:7px;background:var(--bg);">
     </div>
-    <div class="form-row">
+    <div class="form-row" id="rowDiag">
       <label class="form-label">Diagnosis</label>
       <input class="fsel" id="fDiag" type="text" placeholder="พิมพ์ diagnosis..." style="background:var(--bg);">
     </div>
-    <div class="form-row">
+    <div class="form-row" id="rowMax" style="display:none;">
+      <label class="form-label">Diagnosis</label>
+      <div id="maxDiagList"></div>
+      <button type="button" class="add-btn" onclick="addMaxDiag()" style="margin-top:6px;">+ เพิ่ม diagnosis</button>
+      <label class="form-label" style="margin-top:14px;">Operation</label>
+      <div id="maxOpList"></div>
+      <button type="button" class="add-btn" onclick="addMaxOp()" style="margin-top:6px;">+ เพิ่ม operation</button>
+    </div>
+    <div class="form-row" id="rowOp">
       <label class="form-label">Operation</label>
       <select class="fsel" id="fOp" onchange="onOpSel()"></select>
       <input class="finput" id="fOpCustom" type="text" placeholder="พิมพ์ชื่อ operation...">
@@ -1398,6 +1406,8 @@ function openAdd(room,session){
   buildUrgencyBtns('elective');
   buildOpSelect();
   onOpSel();
+  maxDiags=[];maxOps=[];
+  updateMaxMode();
   onTimeChange();
   document.getElementById('fDocCustom').style.display='none';document.getElementById('fDocCustom').value='';
   document.getElementById('fPosition').value='';document.getElementById('fAnesthesia').value='';
@@ -1414,6 +1424,10 @@ function openEdit(id,room,session){
   buildOpSelect();
   setOpVal(op.op);
   document.getElementById('fDiag').value=op.diagnosis||'';
+  if(op.diagList&&op.diagList.length){ maxDiags=op.diagList.slice(); } else { maxDiags=[op.diagnosis||'']; }
+  if(op.opList&&op.opList.length){ maxOps=op.opList.map(o=>({op:o||'',custom:!maxOpsList().includes(o||'')})); }
+  else { maxOps=[{op:op.op||'',custom:!maxOpsList().includes(op.op||'')}]; }
+  updateMaxMode();
   document.getElementById('fRemark').value=op.remark||'';
   document.getElementById('fPosition').value=op.position||'';
   document.getElementById('fAnesthesia').value=op.anesthesia||'';
@@ -1566,6 +1580,68 @@ function buildOpSelect(){
   document.getElementById('fOpTAHBS').checked=false;
   document.getElementById('fOpTAHBSO').checked=false;
 }
+// ── Maxillo: separate multi-diagnosis + multi-operation ──
+let maxDiags=[];   // array of strings
+let maxOps=[];     // array of {op, custom}
+function isMaxModal(){ return currentModalDept()==='maxillo'; }
+function maxOpsList(){ return DEPT_OPS.maxillo||[]; }
+function maxJoin(arr){
+  const a=arr.map(x=>(x||'').trim()).filter(Boolean);
+  if(a.length===0) return '';
+  if(a.length===1) return a[0];
+  return a.map((x,i)=>`${i+1}. ${x}`).join('  ');
+}
+function escMax(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function collectMaxDiags(){ return maxDiags.map(d=>(d||'').trim()).filter(Boolean); }
+function collectMaxOps(){ return maxOps.map(o=>(o.op||'').trim()).filter(Boolean); }
+function addMaxDiag(){ maxDiags.push(''); renderMaxDiags(); }
+function removeMaxDiag(i){ maxDiags.splice(i,1); if(!maxDiags.length) maxDiags=['']; renderMaxDiags(); }
+function addMaxOp(){ maxOps.push({op:(maxOpsList()[0]||''),custom:false}); renderMaxOps(); }
+function removeMaxOp(i){ maxOps.splice(i,1); if(!maxOps.length) maxOps=[{op:(maxOpsList()[0]||''),custom:false}]; renderMaxOps(); }
+function onMaxOpSel(i,val){
+  if(val==='อื่นๆ (พิมพ์เอง)'){ maxOps[i].custom=true; maxOps[i].op=''; }
+  else { maxOps[i].custom=false; maxOps[i].op=val; }
+  renderMaxOps();
+}
+function maxBadge(i){ return `<div style="min-width:22px;height:22px;border-radius:50%;background:var(--db,rgba(121,192,255,.15));color:var(--dc,#79c0ff);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;margin-top:7px;flex:0 0 auto;">${i+1}</div>`; }
+function maxDel(fn,i){ return `<button type="button" onclick="${fn}(${i})" title="ลบ" style="background:none;border:none;color:var(--muted2);font-size:1.1rem;cursor:pointer;padding:0 4px;align-self:flex-start;margin-top:6px;">✕</button>`; }
+function renderMaxDiags(){
+  const wrap=document.getElementById('maxDiagList'); if(!wrap) return;
+  if(!maxDiags.length) maxDiags=[''];
+  wrap.innerHTML=maxDiags.map((d,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
+    ${maxBadge(i)}
+    <input class="fsel" type="text" placeholder="diagnosis..." value="${escMax(d)}" oninput="maxDiags[${i}]=this.value" style="flex:1;min-width:0;background:var(--bg);">
+    ${maxDiags.length>1?maxDel('removeMaxDiag',i):''}
+  </div>`).join('');
+}
+function renderMaxOps(){
+  const wrap=document.getElementById('maxOpList'); if(!wrap) return;
+  if(!maxOps.length) maxOps=[{op:(maxOpsList()[0]||''),custom:false}];
+  const ops=maxOpsList();
+  wrap.innerHTML=maxOps.map((it,i)=>{
+    const isCustom=it.custom===true;
+    const selVal=isCustom?'อื่นๆ (พิมพ์เอง)':it.op;
+    const opts=ops.map(o=>`<option value="${escMax(o)}"${o===selVal?' selected':''}>${escMax(o)}</option>`).join('');
+    return `<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
+      ${maxBadge(i)}
+      <div style="flex:1;min-width:0;">
+        <select class="fsel" onchange="onMaxOpSel(${i},this.value)">${opts}</select>
+        <input class="finput" type="text" placeholder="พิมพ์ชื่อ operation..." value="${escMax(isCustom?it.op:'')}" oninput="maxOps[${i}].op=this.value" style="display:${isCustom?'block':'none'};margin-top:6px;">
+      </div>
+      ${maxOps.length>1?maxDel('removeMaxOp',i):''}
+    </div>`;
+  }).join('');
+}
+function renderMaxLists(){ renderMaxDiags(); renderMaxOps(); }
+function updateMaxMode(){
+  const max=isMaxModal();
+  const rd=document.getElementById('rowDiag'), ro=document.getElementById('rowOp'), rm=document.getElementById('rowMax');
+  if(!rd||!ro||!rm) return;
+  rd.style.display=max?'none':'';
+  ro.style.display=max?'none':'';
+  rm.style.display=max?'':'none';
+  if(max){ if(!maxDiags.length) maxDiags=['']; if(!maxOps.length) maxOps=[{op:(maxOpsList()[0]||''),custom:false}]; renderMaxLists(); }
+}
 function onDocChange(){
   const isOther=document.getElementById('fDoc').value==='__OTHER__';
   document.getElementById('fDocCustom').style.display=isOther?'block':'none';
@@ -1575,6 +1651,7 @@ function onDocChange(){
     onOpSel();
   } else if(fullAcc()){ buildOpSelect(); onOpSel(); }
   refreshMinuteStep();
+  updateMaxMode();
   checkConflict();
 }
 const SIDE_REQUIRED_OPS=["Explore lap ovarian cystectomy","Explore lap salpingectomy","PE + IOL","Ptx","IVT","Blepharoplasty","PPV"];
@@ -1953,10 +2030,14 @@ const CASE_LIMIT_PM=3; // warn from the 4th case onward in PM session
 function saveOp(){
   const s=getStartMin(),e=getEndMin();
   if(e<=s){alert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม');return;}
-  const opVal=getOpVal();
-  if(!opVal){
-    alert('กรุณาระบุชื่อ operation');
-    return;
+  let opVal;
+  if(isMaxModal()){
+    const ops=collectMaxOps();
+    if(!ops.length){ alert('กรุณาระบุ operation อย่างน้อย 1 ข้อ'); return; }
+    opVal=maxJoin(ops);
+  } else {
+    opVal=getOpVal();
+    if(!opVal){ alert('กรุณาระบุชื่อ operation'); return; }
   }
   const _docName=getDocVal();
   if(!_docName){ alert('กรุณาระบุชื่อแพทย์'); return; }
@@ -1988,8 +2069,16 @@ function confirmCaseLimitWarning(){
 
 function commitSaveOp(){
   const s=getStartMin(),e=getEndMin();
-  const opVal=getOpVal();
-  const diag=document.getElementById('fDiag').value.trim();
+  let opVal, diag, diagList=null, opList=null;
+  if(isMaxModal()){
+    diagList=collectMaxDiags();
+    opList=collectMaxOps();
+    opVal=maxJoin(opList);
+    diag=maxJoin(diagList);
+  } else {
+    opVal=getOpVal();
+    diag=document.getElementById('fDiag').value.trim();
+  }
   const remark=document.getElementById('fRemark').value.trim();
   const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
   let ops=getOps(k);
@@ -2001,10 +2090,10 @@ function commitSaveOp(){
   if(editId){
     _theId=editId;
     const _prev=ops.find(o=>o.id===editId)||{};
-    _newOp={..._prev,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,position,anesthesia};
+    _newOp={..._prev,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,position,anesthesia,diagList,opList};
   }else{
     _theId=genId();
-    _newOp={id:_theId,room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,status:'scheduled',position,anesthesia};
+    _newOp={id:_theId,room:modalSlot.room,session:modalSlot.session,doctor:doc,diagnosis:diag,op:opVal,startMin:s,endMin:e,remark,urgency:selUrgency,status:'scheduled',position,anesthesia,diagList,opList};
   }
 
   // if this slot had an "ไม่ใช้ห้องนี้" announcement, clear it since it's now in use
@@ -2478,7 +2567,9 @@ function renderNurseDash(){
   const pzT=prodZone(s.prodTotal);
   let h=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">🧑‍⚕️ ${periodLabel}${editable?' · กรอกข้อมูลแล้วกดยืนยัน':' · สรุปรวมทั้งช่วง (กรอกได้เฉพาะรายวัน)'}</div>`;
   h+=`<div class="kpi-grid">`;
-  h+=`<div class="kpi-card accent"><div class="kpi-label">พยาบาลวันนี้</div><div class="kpi-val" style="color:#f778ba">${s.totalNurses}</div>${editable?nInput('nfTotalNurses',nd.totalNurses,'confirmNurseTotal()'):'<div class="kpi-sub">รวมพยาบาล×วัน</div>'}</div>`;
+  const nurseLabel = nPeriod==='day' ? 'จำนวนพยาบาลวันนี้' : 'จำนวนพยาบาล';
+  const nurseSub = nPeriod==='week' ? 'รวมทั้งสัปดาห์' : (nPeriod==='month' ? 'รวมทั้งเดือน' : '');
+  h+=`<div class="kpi-card accent"><div class="kpi-label">${nurseLabel}</div><div class="kpi-val" style="color:#f778ba">${s.totalNurses}</div>${editable?nInput('nfTotalNurses',nd.totalNurses,'confirmNurseTotal()'):'<div class="kpi-sub">'+nurseSub+'</div>'}</div>`;
   h+=`<div class="kpi-card"><div class="kpi-label">เคสทั้งหมด</div><div class="kpi-val" style="color:#58a6ff">${s.totalCases}</div><div class="kpi-sub">ผ่าตัดเสร็จ ${s.completedTotal} + เฝือก ${s.castCases}</div></div>`;
   h+=`<div class="kpi-card accent"><div class="kpi-label">WL รวม</div><div class="kpi-val" style="color:#f778ba">${s.wlTotal.toFixed(1)}</div><div class="kpi-sub">ชั่วโมง/วัน</div></div>`;
   h+=`<div class="kpi-card"><div class="kpi-label">ชม.ทำงานจริง</div><div class="kpi-val">${s.workHours}</div><div class="kpi-sub">${s.totalNurses} คน × 7</div></div>`;
