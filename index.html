@@ -779,8 +779,7 @@ function statusTagHtml(op){
 }
 
 function weeksInMonth(y,m){
-  let d=new Date(y,m,1);
-  while(d.getDay()!==1)d.setDate(d.getDate()+1);
+  let d=dispMonday(y,m);
   let c=0;const last=new Date(y,m+1,0);
   while(d<=last){c++;d.setDate(d.getDate()+7);}
   return Math.max(c,1);
@@ -791,7 +790,10 @@ function getDate(y,m,w,d){
   dt.setDate(dt.getDate()+w*7+d);return dt;
 }
 function weekRange(y,m,w){
-  const mon=getDate(y,m,w,0),fri=getDate(y,m,w,4);
+  let lo=-1,hi=-1;
+  for(let i=0;i<5;i++){ if(inDispMonth(y,m,w,i)){ if(lo<0)lo=i; hi=i; } }
+  if(lo<0) lo=hi=0;
+  const mon=dispDate(y,m,w,lo),fri=dispDate(y,m,w,hi);
   return `${mon.getDate()}–${fri.getDate()}`;
 }
 function findTodayWeek(y,m,targetDate){
@@ -817,12 +819,19 @@ function slotForDate(dt){
   const diff=Math.round((t-base)/86400000);
   return {y,m,w:Math.floor(diff/7),d:diff%7};
 }
+// DISPLAY (clip-to-month calendar); storage keys stay canonical via slotForDate
+function dispMonday(y,m){ let d=new Date(y,m,1); const wd=d.getDay(); if(wd===6){d.setDate(d.getDate()+2);} else if(wd===0){d.setDate(d.getDate()+1);} else { while(d.getDay()!==1)d.setDate(d.getDate()-1); } return d; }
+function dispDate(y,m,w,d){ const base=dispMonday(y,m); const dt=new Date(base); dt.setDate(base.getDate()+w*7+d); return dt; }
+function inDispMonth(y,m,w,d){ const dt=dispDate(y,m,w,d); return dt.getMonth()===m && dt.getFullYear()===y; }
+function keyOf(y,m,w,d){ const t=slotForDate(dispDate(y,m,w,d)); return `${t.y}_${t.m}_${t.w}_${t.d}`; }
+function clampDay(y,m,w,d){ if(inDispMonth(y,m,w,d))return d; for(let i=0;i<5;i++) if(inDispMonth(y,m,w,i))return i; return 0; }
+function dispSlotForDate(dt){ const jd=dt.getDay(); let t=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()); if(jd===0||jd===6) t.setDate(t.getDate()+(jd===0?1:2)); const y=t.getFullYear(), m=t.getMonth(); const base=dispMonday(y,m); const diff=Math.round((t-base)/86400000); return {y,m,w:Math.floor(diff/7),d:diff%7}; }
 function todayDayIdx(){const j=_now.getDay();return(j===0||j===6)?0:j-1;}
 
-const fbPath=()=>`schedule/${curYear}_${curMonth}_${curWeek}_${curDay}`;
+const fbPath=()=>'schedule/'+keyOf(curYear,curMonth,curWeek,curDay);
 const fbPathFor=(y,m,w,d)=>`schedule/${y}_${m}_${w}_${d}`;
 const getOps=key=>opsData[key]||[];
-const curOps=()=>getOps(`${curYear}_${curMonth}_${curWeek}_${curDay}`);
+const curOps=()=>getOps(keyOf(curYear,curMonth,curWeek,curDay));
 
 // ── SYNC STATUS ──────────────────────────────────────
 function showSync(msg,color){
@@ -944,7 +953,7 @@ async function loadAllData(){
   // ── init to TODAY every login ──────────────────────
   // reset month to today's real month
   const loginNow = new Date();
-  const _slot = slotForDate(loginNow);
+  const _slot = dispSlotForDate(loginNow);
   curYear=_slot.y; curMonth=_slot.m; curWeek=_slot.w; curDay=_slot.d;
   cYear=curYear; cMonth=curMonth; cWeek=curWeek; cDay=curDay;
 
@@ -961,8 +970,8 @@ async function loadAllData(){
         const d=await fbGet('schedule');opsData=d||{};
       }else{
         const keys=[...new Set([
-          `${curYear}_${curMonth}_${curWeek}_${curDay}`,
-          `${cYear}_${cMonth}_${cWeek}_${cDay}`
+          keyOf(curYear,curMonth,curWeek,curDay),
+          keyOf(cYear,cMonth,cWeek,cDay)
         ])];
         for(const k of keys){
           const dd=await fbGet('schedule/'+k);
@@ -1022,7 +1031,7 @@ async function saveDayMerge(k, opId, newOp){
 
 // ── SLOT ANNOUNCEMENT (ไม่ใช้ห้องนี้) ──────────────────
 function announceKey(room,session){
-  return `${curYear}_${curMonth}_${curWeek}_${curDay}_${room}_${session}`;
+  return keyOf(curYear,curMonth,curWeek,curDay)+`_${room}_${session}`;
 }
 async function announceSlotFree(room,session){
   if(currentUser.isViewer) return;
@@ -1050,7 +1059,7 @@ async function cancelAnnounce(room,session){
   renderMyTab(); renderCentralTab();
 }
 function getAnnounce(y,m,w,d,room,session){
-  return announceData[`${y}_${m}_${w}_${d}_${room}_${session}`];
+  return announceData[keyOf(y,m,w,d)+`_${room}_${session}`];
 }
 
 // ── TABS ──────────────────────────────────────────────
@@ -1104,7 +1113,8 @@ function buildMonthWeekNav(y,m,w,btnId,labelId){
 }
 function buildDayNav(y,m,w,d,fn){
   return DAYS.map((l,i)=>{
-    const dt=getDate(y,m,w,i);
+    const dt=dispDate(y,m,w,i);
+    if(dt.getMonth()!==m||dt.getFullYear()!==y) return `<button class="pill" disabled style="opacity:.3;cursor:default;">${l}<br><span style="font-size:.62rem;opacity:.7">–</span></button>`;
     return `<button class="pill${i===d?' active':''}" onclick="${fn}(${i})">${l}<br><span style="font-size:.62rem;opacity:.7">${dt.getDate()}</span></button>`;
   }).join('');
 }
@@ -1113,6 +1123,7 @@ function buildDayNav(y,m,w,d,fn){
 function renderMyTab(){
   const total=weeksInMonth(curYear,curMonth);
   if(curWeek>=total)curWeek=total-1;
+  curDay=clampDay(curYear,curMonth,curWeek,curDay);
   document.getElementById('monthLabel').textContent=`${THAI_MONTHS[curMonth]} ${curYear+543}`;
   document.getElementById('weekBtns').innerHTML=buildMonthWeekNav(curYear,curMonth,curWeek,'setWeek','monthLabel');
   document.getElementById('dayBtns').innerHTML=buildDayNav(curYear,curMonth,curWeek,curDay,'setDay');
@@ -1225,7 +1236,7 @@ function renderMyTab(){
   const sec=document.getElementById('summarySection');
   const sumOps=ops.filter(o=>daySlots.some(s=>s.room===o.room&&s.session===o.session));
   if(!sumOps.length||daySlots.length===0){sec.innerHTML='';return;}
-  const dt=getDate(curYear,curMonth,curWeek,curDay);
+  const dt=dispDate(curYear,curMonth,curWeek,curDay);
   let sum=`<div class="summary-title">สรุปตาราง · วัน${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}</div>`;
   ALL_ROOMS.forEach(room=>{
     const roomOps=sumOps.filter(o=>o.room===room).sort((a,b)=>a.startMin-b.startMin);
@@ -1253,11 +1264,12 @@ function renderMyTab(){
 async function renderCentralTab(){
   const total=weeksInMonth(cYear,cMonth);
   if(cWeek>=total)cWeek=total-1;
+  cDay=clampDay(cYear,cMonth,cWeek,cDay);
   document.getElementById('monthLabelC').textContent=`${THAI_MONTHS[cMonth]} ${cYear+543}`;
   document.getElementById('weekBtnsC').innerHTML=buildMonthWeekNav(cYear,cMonth,cWeek,'setWeekC','monthLabelC');
   document.getElementById('dayBtnsC').innerHTML=buildDayNav(cYear,cMonth,cWeek,cDay,'setDayC');
 
-  const key=`${cYear}_${cMonth}_${cWeek}_${cDay}`;
+  const key=keyOf(cYear,cMonth,cWeek,cDay);
   let ops=getOps(key);
   const urgFilter=document.getElementById('centralUrgencyFilter').value;
   if(urgFilter!=='all'){
@@ -1265,7 +1277,7 @@ async function renderCentralTab(){
   }
   const rooms=["OR-1","OR-2","OR-3","OR-4"];
   const sessions=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
-  const dt=getDate(cYear,cMonth,cWeek,cDay);
+  const dt=dispDate(cYear,cMonth,cWeek,cDay);
 
   let html='';
   rooms.forEach(room=>{
@@ -1321,7 +1333,7 @@ function getDeptFromDoctor(name){
 
 // ── PRINT CENTRAL VIEW ─────────────────────────────────
 function printCentralView(){
-  const key=`${cYear}_${cMonth}_${cWeek}_${cDay}`;
+  const key=keyOf(cYear,cMonth,cWeek,cDay);
   let ops=getOps(key);
   const urgFilter=document.getElementById('centralUrgencyFilter').value;
   if(urgFilter!=='all'){
@@ -1329,7 +1341,7 @@ function printCentralView(){
   }
   const rooms=["OR-1","OR-2","OR-3","OR-4"];
   const sessions=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
-  const dt=getDate(cYear,cMonth,cWeek,cDay);
+  const dt=dispDate(cYear,cMonth,cWeek,cDay);
   const dateLabel=`วัน${DAYS[cDay]}ที่ ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;
   const urgLabelMap={emergency:'Emergency',urgent:'Urgent',elective:'Elective'};
 
@@ -1474,7 +1486,7 @@ function onRecTimeChange(){
   h.textContent=parts.length?'⏱ '+parts.join(' · '):'';h.style.color='#3fb950';
 }
 function saveRecord(){
-  const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
+  const k=keyOf(curYear,curMonth,curWeek,curDay);
   const ops=getOps(k);
   let patch;
   if(recStatus==='completed'){
@@ -1492,7 +1504,7 @@ function saveRecord(){
   }
   const _prev=ops.find(o=>o.id===recEditId)||{};
   const _newOp={..._prev,...patch};
-  const dt=getDate(curYear,curMonth,curWeek,curDay);
+  const dt=dispDate(curYear,curMonth,curWeek,curDay);
   const stTxt={completed:'✓เสร็จ',cancelled:'✗ยกเลิก',scheduled:'📋ตามแผน'}[recStatus]||'';
   writeLog('edit',`บันทึกผล · ${recSlot.room} ${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} · ${_newOp.doctor||''} · ${stTxt}`);
   saveDayMerge(k, recEditId, _newOp); closeRecordModal();
@@ -1907,7 +1919,8 @@ function renderHistory(){
 }
 
 function jumpToDate(y,m,w,d){
-  curYear=y; curMonth=m; curWeek=w; curDay=d;
+  const s=dispSlotForDate(getDate(y,m,w,d));
+  curYear=s.y; curMonth=s.m; curWeek=s.w; curDay=s.d;
   switchTab('my');
 }
 
@@ -2038,7 +2051,7 @@ function saveOp(){
   if(!_docName){ alert('กรุณาระบุชื่อแพทย์'); return; }
 
   // count existing cases in this room+session (excluding the one being edited)
-  const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
+  const k=keyOf(curYear,curMonth,curWeek,curDay);
   const ops=getOps(k);
   const room=modalSlot.room, session=modalSlot.session;
   const existingCount=ops.filter(o=>o.room===room&&o.session===session&&o.id!==editId).length;
@@ -2075,7 +2088,7 @@ function commitSaveOp(){
     diag=document.getElementById('fDiag').value.trim();
   }
   const remark=document.getElementById('fRemark').value.trim();
-  const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
+  const k=keyOf(curYear,curMonth,curWeek,curDay);
   let ops=getOps(k);
   const doc=getDocVal();
   const position=document.getElementById('fPosition').value||null;
@@ -2100,7 +2113,7 @@ function commitSaveOp(){
     }
   }
 
-  const dt=getDate(curYear,curMonth,curWeek,curDay);
+  const dt=dispDate(curYear,curMonth,curWeek,curDay);
   const dateStr=`${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]}`;
   if(editId){
     writeLog('edit',`${modalSlot.room} ${DAYS[curDay]} ${dateStr} · ${doc} · ${opVal}`);
@@ -2110,10 +2123,10 @@ function commitSaveOp(){
   saveDayMerge(k,_theId,_newOp);closeModal();
 }
 function deleteOp(){
-  const k=`${curYear}_${curMonth}_${curWeek}_${curDay}`;
+  const k=keyOf(curYear,curMonth,curWeek,curDay);
   const op=getOps(k).find(o=>o.id===editId);
   if(op){
-    const dt=getDate(curYear,curMonth,curWeek,curDay);
+    const dt=dispDate(curYear,curMonth,curWeek,curDay);
     const dateStr=`${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]}`;
     writeLog('delete',`${op.room} ${DAYS[curDay]} ${dateStr} · ${op.doctor} · ${op.op}`);
   }
@@ -2123,7 +2136,7 @@ function deleteOp(){
 // ── EXPORT ────────────────────────────────────────────
 function exportDay(){
   const ops=[...curOps()].sort((a,b)=>a.startMin-b.startMin);
-  const dt=getDate(curYear,curMonth,curWeek,curDay);
+  const dt=dispDate(curYear,curMonth,curWeek,curDay);
   let txt=`=== OR Schedule วัน${DAYS[curDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543} ===\n\n`;
   const daySlots=currentUser.slots.filter(s=>s.day===curDay);
   daySlots.forEach(sl=>{
@@ -2145,7 +2158,7 @@ const DAY_CAP=(SESS_LEN.am+SESS_LEN.pm)*ALL_ROOMS.length;
 
 function dashInit(){
   if(dYear!=null) return;
-  const _s=slotForDate(new Date());
+  const _s=dispSlotForDate(new Date());
   dYear=_s.y; dMonth=_s.m; dWeek=_s.w; dDay=_s.d;
 }
 function setDashPeriod(p){
@@ -2168,8 +2181,8 @@ function weekdaysInMonth(y,m){
   return n;
 }
 function dashPeriodDates(){
-  if(dPeriod==='day') return [getDate(dYear,dMonth,dWeek,dDay)];
-  if(dPeriod==='week') return [0,1,2,3,4].map(i=>getDate(dYear,dMonth,dWeek,i));
+  if(dPeriod==='day') return [dispDate(dYear,dMonth,dWeek,dDay)];
+  if(dPeriod==='week') return [0,1,2,3,4].filter(i=>inDispMonth(dYear,dMonth,dWeek,i)).map(i=>dispDate(dYear,dMonth,dWeek,i));
   const arr=[];const last=new Date(dYear,dMonth+1,0).getDate();
   for(let day=1;day<=last;day++){const dt=new Date(dYear,dMonth,day);const wd=dt.getDay();if(wd>=1&&wd<=5)arr.push(dt);}
   return arr;
@@ -2296,6 +2309,7 @@ function utilColor(p){return p>100?'#f78166':p>=70?'#3fb950':p>=40?'#e3b341':'#5
 
 function renderDashboard(){
   dashInit();
+  const _dwt=weeksInMonth(dYear,dMonth); if(dWeek>=_dwt)dWeek=_dwt-1; dDay=clampDay(dYear,dMonth,dWeek,dDay);
   document.getElementById('dashMonthLabel').textContent=`${THAI_MONTHS[dMonth]} ${dYear+543}`;
   const showWeek=dPeriod!=='month', showDay=dPeriod==='day';
   document.getElementById('dashWeekWrap').style.display=showWeek?'flex':'none';
@@ -2312,7 +2326,7 @@ function renderDashboard(){
   const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
 
   let periodLabel;
-  if(dPeriod==='day'){const dt=getDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(dPeriod==='day'){const dt=dispDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
   else if(dPeriod==='week')periodLabel=`สัปดาห์ ${dWeek+1} (${weekRange(dYear,dMonth,dWeek)} ${THAI_MONTHS[dMonth]}) · ${dYear+543}`;
   else periodLabel=`${THAI_MONTHS[dMonth]} ${dYear+543} · ${s.nDays} วันทำการ`;
 
@@ -2445,7 +2459,7 @@ function printDashboard(){
   const bookedU=pct(s.bookedMin,s.availMin), actU=pct(s.actMin,s.availMin);
   const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
   let periodLabel;
-  if(dPeriod==='day'){const dt=getDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(dPeriod==='day'){const dt=dispDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
   else if(dPeriod==='week')periodLabel=`สัปดาห์ ${dWeek+1} (${weekRange(dYear,dMonth,dWeek)} ${THAI_MONTHS[dMonth]}) ${dYear+543}`;
   else periodLabel=`${THAI_MONTHS[dMonth]} ${dYear+543} (${s.nDays} วันทำการ)`;
 
@@ -2483,12 +2497,12 @@ function setNPeriod(p){ nPeriod=p; document.querySelectorAll('#nPeriodBtns .pill
 function shiftNMonth(dir){ nMonth+=dir; if(nMonth>11){nMonth=0;nYear++;} if(nMonth<0){nMonth=11;nYear--;} nWeek=0; renderNurseDash(); }
 function setNWeek(w){nWeek=w;renderNurseDash();}
 function setNDay(d){nDay=d;renderNurseDash();}
-function nurseInit(){ if(nYear!=null)return; const _s=slotForDate(new Date()); nYear=_s.y; nMonth=_s.m; nWeek=_s.w; nDay=_s.d; }
+function nurseInit(){ if(nYear!=null)return; const _s=dispSlotForDate(new Date()); nYear=_s.y; nMonth=_s.m; nWeek=_s.w; nDay=_s.d; }
 function nursePeriodKeys(){
-  if(nPeriod==='day') return [`${nYear}_${nMonth}_${nWeek}_${nDay}`];
-  if(nPeriod==='week') return [0,1,2,3,4].map(d=>`${nYear}_${nMonth}_${nWeek}_${d}`);
+  if(nPeriod==='day') return [keyOf(nYear,nMonth,nWeek,nDay)];
+  if(nPeriod==='week') return [0,1,2,3,4].filter(d=>inDispMonth(nYear,nMonth,nWeek,d)).map(d=>keyOf(nYear,nMonth,nWeek,d));
   const keys=[]; const wks=weeksInMonth(nYear,nMonth);
-  for(let w=0;w<wks;w++) for(let d=0;d<5;d++){ const dt=getDate(nYear,nMonth,w,d); if(dt.getMonth()===nMonth&&dt.getFullYear()===nYear) keys.push(`${nYear}_${nMonth}_${w}_${d}`); }
+  for(let w=0;w<wks;w++) for(let d=0;d<5;d++){ if(inDispMonth(nYear,nMonth,w,d)) keys.push(keyOf(nYear,nMonth,w,d)); }
   return keys;
 }
 function computeNurseStats(){
@@ -2522,7 +2536,7 @@ function confirmNurseTotal(){ saveNurseField('totalNurses',Math.max(0,parseInt(d
 function confirmNurseCast(){ saveNurseField('castCases',Math.max(0,parseInt(document.getElementById('nfCastCases').value)||0)); }
 function confirmRoomNurse(room){ saveNurseField('roomNurse',Math.max(0,parseInt(document.getElementById('nfNurse_'+room).value)||0),room); }
 async function saveNurseField(field,value,room){
-  const k=`${nYear}_${nMonth}_${nWeek}_${nDay}`;
+  const k=keyOf(nYear,nMonth,nWeek,nDay);
   showSync('⏳ กำลังบันทึก…','#f778ba');
   let cur;
   try{ cur=await fbGet('nurse_wl/'+k); }catch(e){ showSync('⚠ โหลดไม่ได้ ลองใหม่','#f78166'); setConn(false); return; }
@@ -2537,6 +2551,7 @@ async function saveNurseField(field,value,room){
 }
 function renderNurseDash(){
   nurseInit();
+  const _nwt=weeksInMonth(nYear,nMonth); if(nWeek>=_nwt)nWeek=_nwt-1; nDay=clampDay(nYear,nMonth,nWeek,nDay);
   document.getElementById('nMonthLabel').textContent=`${THAI_MONTHS[nMonth]} ${nYear+543}`;
   const showWeek=nPeriod!=='month', showDay=nPeriod==='day';
   document.getElementById('nWeekWrap').style.display=showWeek?'flex':'none';
@@ -2545,10 +2560,10 @@ function renderNurseDash(){
   if(showDay) document.getElementById('nDayBtns').innerHTML=buildDayNav(nYear,nMonth,nWeek,nDay,'setNDay');
   const s=computeNurseStats();
   const editable=nPeriod==='day';
-  const dayKey=`${nYear}_${nMonth}_${nWeek}_${nDay}`;
+  const dayKey=keyOf(nYear,nMonth,nWeek,nDay);
   const nd=nurseData[dayKey]||{}; const rn=nd.roomNurses||{};
   let periodLabel;
-  if(nPeriod==='day'){const dt=getDate(nYear,nMonth,nWeek,nDay);periodLabel=`วัน${DAYS[nDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(nPeriod==='day'){const dt=dispDate(nYear,nMonth,nWeek,nDay);periodLabel=`วัน${DAYS[nDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
   else if(nPeriod==='week')periodLabel=`สัปดาห์ ${nWeek+1} (${weekRange(nYear,nMonth,nWeek)} ${THAI_MONTHS[nMonth]}) · ${nYear+543}`;
   else periodLabel=`${THAI_MONTHS[nMonth]} ${nYear+543}`;
   const pzT=prodZone(s.prodTotal);
