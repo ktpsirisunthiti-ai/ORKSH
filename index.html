@@ -806,6 +806,17 @@ function findTodayWeek(y,m,targetDate){
   }
   return 0;
 }
+function firstMondayOf(y,m){ let d=new Date(y,m,1); while(d.getDay()!==1)d.setDate(d.getDate()+1); return d; }
+function slotForDate(dt){
+  const jd=dt.getDay();
+  let t=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate());
+  if(jd===0||jd===6) t.setDate(t.getDate()+(jd===0?1:2)); // weekend -> next Monday
+  let y=t.getFullYear(), m=t.getMonth();
+  let base=firstMondayOf(y,m);
+  if(t<base){ m-=1; if(m<0){m=11;y-=1;} base=firstMondayOf(y,m); } // before 1st Monday -> prev month's last week
+  const diff=Math.round((t-base)/86400000);
+  return {y,m,w:Math.floor(diff/7),d:diff%7};
+}
 function todayDayIdx(){const j=_now.getDay();return(j===0||j===6)?0:j-1;}
 
 const fbPath=()=>`schedule/${curYear}_${curMonth}_${curWeek}_${curDay}`;
@@ -933,25 +944,9 @@ async function loadAllData(){
   // ── init to TODAY every login ──────────────────────
   // reset month to today's real month
   const loginNow = new Date();
-  curYear  = loginNow.getFullYear();
-  curMonth = loginNow.getMonth();
-  cYear    = curYear; cMonth = curMonth;
-
-  const jsDay = loginNow.getDay(); // 0=Sun, 6=Sat
-  if(jsDay === 0 || jsDay === 6){
-    // weekend → jump to next Monday
-    const nextMon = new Date(loginNow);
-    nextMon.setDate(loginNow.getDate() + (jsDay === 0 ? 1 : 2));
-    curYear  = nextMon.getFullYear();
-    curMonth = nextMon.getMonth();
-    cYear    = curYear; cMonth = curMonth;
-    curWeek  = findTodayWeek(curYear, curMonth, nextMon.getDate());
-    curDay   = 0; // Monday
-  } else {
-    curWeek = findTodayWeek(curYear, curMonth, loginNow.getDate());
-    curDay  = jsDay - 1; // Mon=0 ... Fri=4
-  }
-  cWeek = curWeek; cDay = curDay;
+  const _slot = slotForDate(loginNow);
+  curYear=_slot.y; curMonth=_slot.m; curWeek=_slot.w; curDay=_slot.d;
+  cYear=curYear; cMonth=curMonth; cWeek=curWeek; cDay=curDay;
 
   document.getElementById('app').classList.add('show');
   renderMyTab();
@@ -2150,16 +2145,8 @@ const DAY_CAP=(SESS_LEN.am+SESS_LEN.pm)*ALL_ROOMS.length;
 
 function dashInit(){
   if(dYear!=null) return;
-  const now=new Date();
-  dYear=now.getFullYear(); dMonth=now.getMonth();
-  const jsDay=now.getDay();
-  if(jsDay===0||jsDay===6){ // weekend → next Monday
-    const nm=new Date(now); nm.setDate(now.getDate()+(jsDay===0?1:2));
-    dYear=nm.getFullYear(); dMonth=nm.getMonth();
-    dWeek=findTodayWeek(dYear,dMonth,nm.getDate()); dDay=0;
-  } else {
-    dWeek=findTodayWeek(dYear,dMonth,now.getDate()); dDay=jsDay-1; // Mon=0..Fri=4
-  }
+  const _s=slotForDate(new Date());
+  dYear=_s.y; dMonth=_s.m; dWeek=_s.w; dDay=_s.d;
 }
 function setDashPeriod(p){
   dPeriod=p;
@@ -2496,7 +2483,7 @@ function setNPeriod(p){ nPeriod=p; document.querySelectorAll('#nPeriodBtns .pill
 function shiftNMonth(dir){ nMonth+=dir; if(nMonth>11){nMonth=0;nYear++;} if(nMonth<0){nMonth=11;nYear--;} nWeek=0; renderNurseDash(); }
 function setNWeek(w){nWeek=w;renderNurseDash();}
 function setNDay(d){nDay=d;renderNurseDash();}
-function nurseInit(){ if(nYear!=null)return; const now=new Date(); nYear=now.getFullYear(); nMonth=now.getMonth(); const jd=now.getDay(); if(jd===0||jd===6){ const nm=new Date(now); nm.setDate(now.getDate()+(jd===0?1:2)); nYear=nm.getFullYear(); nMonth=nm.getMonth(); nWeek=findTodayWeek(nYear,nMonth,nm.getDate()); nDay=0; } else { nWeek=findTodayWeek(nYear,nMonth,now.getDate()); nDay=jd-1; } }
+function nurseInit(){ if(nYear!=null)return; const _s=slotForDate(new Date()); nYear=_s.y; nMonth=_s.m; nWeek=_s.w; nDay=_s.d; }
 function nursePeriodKeys(){
   if(nPeriod==='day') return [`${nYear}_${nMonth}_${nWeek}_${nDay}`];
   if(nPeriod==='week') return [0,1,2,3,4].map(d=>`${nYear}_${nMonth}_${nWeek}_${d}`);
