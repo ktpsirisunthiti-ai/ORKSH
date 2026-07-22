@@ -110,7 +110,7 @@ button,select,input{font-family:inherit;}
 .op-item:hover{filter:brightness(1.15);}
 .op-item:last-child{margin-bottom:0;}
 .op-info{flex:1;min-width:0;}
-.op-name{font-size:.9rem;font-weight:700;color:var(--text-strong,#0d1117);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.op-name{font-size:.9rem;font-weight:700;color:var(--text-strong,#0d1117);overflow-wrap:anywhere;}
 .urgency-btn{flex:1;padding:8px 4px;border:1.5px solid var(--border2);border-radius:7px;background:var(--surface2);color:var(--muted);cursor:pointer;font-size:.8rem;font-weight:700;transition:all .15s;}
 .urgency-btn.active[data-val="elective"]{border-color:#3fb950;background:rgba(63,185,80,.15);color:#3fb950;}
 .urgency-btn.active[data-val="urgent"]{border-color:#e3b341;background:rgba(227,179,65,.15);color:#e3b341;}
@@ -160,14 +160,14 @@ button,select,input{font-family:inherit;}
 .central-grid{display:flex;flex-direction:column;gap:8px;}
 .cv-room{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
 .cv-room-header{padding:8px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:.85rem;font-weight:700;}
-.cv-sessions{display:grid;grid-template-columns:1fr 1fr;gap:0;}
-.cv-session{padding:8px 12px;border-right:1px solid var(--border);}
+.cv-sessions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;align-items:start;}
+.cv-session{padding:8px 12px;border-right:1px solid var(--border);min-width:0;}
 .cv-session:last-child{border-right:none;}
 .cv-sess-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-.cv-op{padding:5px 8px;border-radius:5px;margin-bottom:4px;border-left:3px solid;font-size:.75rem;position:relative;}
+.cv-op{padding:5px 8px;border-radius:5px;margin-bottom:4px;border-left:3px solid;font-size:.75rem;position:relative;min-width:0;overflow-wrap:anywhere;}
 .cv-op:last-child{margin-bottom:0;}
-.cv-op-doc{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cv-op-name{color:var(--text-strong,#0d1117);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cv-op-doc{font-weight:700;overflow-wrap:anywhere;}
+.cv-op-name{color:var(--text-strong,#0d1117);font-weight:700;overflow-wrap:anywhere;}
 .cv-empty{font-size:.72rem;color:var(--border2);font-style:italic;}
 .cv-announce{background:rgba(63,185,80,.1);border:1px dashed #3fb950;border-radius:6px;padding:8px 10px;font-size:.72rem;color:#3fb950;}
 .cv-announce-title{font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:4px;}
@@ -1307,7 +1307,7 @@ async function renderCentralTab(){
             <span class="urgency-badge-sm ${urg}">${urgLabel}</span>
             <div style="padding-right:58px;">
               <div class="cv-op-doc" style="color:${dc}">${op.doctor}</div>
-              ${op.diagnosis?`<div style="font-size:.65rem;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${op.diagnosis}</div>`:''}
+              ${op.diagnosis?`<div style="font-size:.65rem;color:var(--muted);font-style:italic;overflow-wrap:anywhere;">${op.diagnosis}</div>`:''}
               <div class="cv-op-name">${op.op}${statusTagHtml(op)}</div>
               <div style="font-size:.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">${minToTime(op.startMin)}–${minToTime(op.endMin)} · ${fmtDur(op.endMin-op.startMin)}</div>
               ${(op.position||op.anesthesia)?`<div style="font-size:.6rem;color:var(--muted2);margin-top:1px;">${[op.position,op.anesthesia].filter(Boolean).join(' · ')}</div>`:''}
