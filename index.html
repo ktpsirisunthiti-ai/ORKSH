@@ -2304,14 +2304,23 @@ function computeDashStats(){
     rooms,sessions,weekdays,depts,mix,topOps,topDocs,used,releasedSlots,empty,overruns,totalSlots:used+releasedSlots+empty};
 }
 function deptAllocatedMinPeriod(wdc){
-  const map={};
+  // โควต้า = นับ "ช่องจริง" (วัน+ห้อง+คาบ) แบบไม่ซ้ำ — 1 ช่องเป็นของแผนกเดียวเท่านั้น
+  // แม้แพทย์หลายคนในแผนกจะแชร์ช่องเดียวกันก็นับครั้งเดียว
+  // ข้ามบัญชีที่ไม่ใช่แพทย์จริง (admin/viewer/exec/recorder/nurse) และบัญชีรวมแผนก (deptScope, slots:"ALL")
+  const owner={};
   Object.values(USERS_BY_ID).forEach(u=>{
-    if(u.isAdmin||u.isViewer||u.isExec||u.isRecorder)return;
+    if(u.isAdmin||u.isViewer||u.isExec||u.isRecorder||u.isNurse||u.deptScope)return;
     if(!Array.isArray(u.slots))return;
     u.slots.forEach(sl=>{
-      const n=wdc[sl.day]||0;
-      map[u.dept]=(map[u.dept]||0)+(SESS_LEN[sl.session]||0)*n;
+      if(!sl||sl.day==null||!sl.room||!sl.session)return;
+      const k=`${sl.day}|${sl.room}|${sl.session}`;
+      if(owner[k]==null) owner[k]=u.dept;
     });
+  });
+  const map={};
+  Object.keys(owner).forEach(k=>{
+    const p=k.split('|'), day=+p[0], session=p[2], dept=owner[k];
+    map[dept]=(map[dept]||0)+(SESS_LEN[session]||0)*(wdc[day]||0);
   });
   return map;
 }
