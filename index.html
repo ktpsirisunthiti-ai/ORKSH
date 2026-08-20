@@ -456,6 +456,7 @@ button,select,input{font-family:inherit;}
         <div id="dashDayBtns" class="pill-row"></div>
       </div>
       <button class="btn-ghost" onclick="printDashboard()">🖨 พิมพ์</button>
+      <button class="btn-ghost" onclick="exportDashPDF()">📄 Export PDF</button>
     </div>
     <div id="dashboardBody"></div>
   </div>
@@ -487,6 +488,7 @@ button,select,input{font-family:inherit;}
         <div class="ctrl-label">วัน</div>
         <div id="nDayBtns" class="pill-row"></div>
       </div>
+      <button class="btn-ghost" onclick="exportNursePDF()">📄 Export PDF</button>
     </div>
     <div id="nurseBody"></div>
   </div>
@@ -826,6 +828,22 @@ function inDispMonth(y,m,w,d){ const dt=dispDate(y,m,w,d); return dt.getMonth()=
 function keyOf(y,m,w,d){ const t=slotForDate(dispDate(y,m,w,d)); return `${t.y}_${t.m}_${t.w}_${t.d}`; }
 function clampDay(y,m,w,d){ if(inDispMonth(y,m,w,d))return d; for(let i=0;i<5;i++) if(inDispMonth(y,m,w,i))return i; return 0; }
 function dispSlotForDate(dt){ const jd=dt.getDay(); let t=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate()); if(jd===0||jd===6) t.setDate(t.getDate()+(jd===0?1:2)); const y=t.getFullYear(), m=t.getMonth(); const base=dispMonday(y,m); const diff=Math.round((t-base)/86400000); return {y,m,w:Math.floor(diff/7),d:diff%7}; }
+// ── วันหยุดราชการ (งดตั้งผ่าตัด + ไม่นับใน dashboard/workload) ──
+const HOLIDAYS={
+  '2026-07-28':'วันเฉลิมพระชนมพรรษา ร.10',
+  '2026-07-29':'วันอาสาฬหบูชา',
+  '2026-07-30':'วันเข้าพรรษา',
+  '2026-08-12':'วันแม่แห่งชาติ',
+  '2026-10-13':'วันคล้ายวันสวรรคต ร.9',
+  '2026-10-23':'วันปิยมหาราช',
+  '2026-12-05':'วันพ่อแห่งชาติ',
+  '2026-12-07':'ชดเชยวันพ่อแห่งชาติ',
+  '2026-12-10':'วันรัฐธรรมนูญ',
+  '2026-12-31':'วันสิ้นปี'
+};
+const isoOf=dt=>`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+const holidayName=dt=>HOLIDAYS[isoOf(dt)]||null;
+const isHoliday=dt=>!!HOLIDAYS[isoOf(dt)];
 function todayDayIdx(){const j=_now.getDay();return(j===0||j===6)?0:j-1;}
 
 const fbPath=()=>'schedule/'+keyOf(curYear,curMonth,curWeek,curDay);
@@ -1115,7 +1133,8 @@ function buildDayNav(y,m,w,d,fn){
   return DAYS.map((l,i)=>{
     const dt=dispDate(y,m,w,i);
     if(dt.getMonth()!==m||dt.getFullYear()!==y) return `<button class="pill" disabled style="opacity:.3;cursor:default;">${l}<br><span style="font-size:.62rem;opacity:.7">–</span></button>`;
-    return `<button class="pill${i===d?' active':''}" onclick="${fn}(${i})">${l}<br><span style="font-size:.62rem;opacity:.7">${dt.getDate()}</span></button>`;
+    const hol=isHoliday(dt);
+    return `<button class="pill${i===d?' active':''}"${hol?' style="border-color:#f78166;color:#f78166;" title="'+holidayName(dt)+'"':''} onclick="${fn}(${i})">${l}${hol?' 🎌':''}<br><span style="font-size:.62rem;opacity:.7">${dt.getDate()}</span></button>`;
   }).join('');
 }
 
@@ -1176,7 +1195,8 @@ function renderMyTab(){
     infoHtml+=`</div></div>`;
   }
 
-  let html=infoHtml;
+  const _hd=dispDate(curYear,curMonth,curWeek,curDay), _hn=holidayName(_hd);
+  let html=(_hn?`<div style="background:rgba(247,129,102,.1);border:1px solid #f78166;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.85rem;color:#f78166;">🎌 <strong>วันหยุดราชการ</strong> — ${_hn} · งดตั้งผ่าตัด และไม่นับในการคำนวณ dashboard</div>`:'')+infoHtml;
   if(daySlots.length===0){
     html+=`<div style="color:var(--muted);font-size:.85rem;padding:20px 0;text-align:center;">ไม่มี OR slot วันนี้</div>`;
   } else {
@@ -1278,8 +1298,8 @@ async function renderCentralTab(){
   const rooms=["OR-1","OR-2","OR-3","OR-4"];
   const sessions=[{id:"am",label:"☀ เช้า"},{id:"pm",label:"🌤 บ่าย"}];
   const dt=dispDate(cYear,cMonth,cWeek,cDay);
-
-  let html='';
+  const _chn=holidayName(dt);
+  let html=_chn?`<div style="background:rgba(247,129,102,.1);border:1px solid #f78166;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:.85rem;color:#f78166;">🎌 <strong>วันหยุดราชการ</strong> — ${_chn} · งดตั้งผ่าตัด</div>`:'';
   rooms.forEach(room=>{
     html+=`<div class="cv-room"><div class="cv-room-header">${room}</div><div class="cv-sessions">`;
     sessions.forEach(sess=>{
@@ -1393,6 +1413,8 @@ function printCentralView(){
 // ── MODAL ─────────────────────────────────────────────
 function openAdd(room,session){
   if(currentUser.isViewer||currentUser.isExec) return;
+  const _ahn=holidayName(dispDate(curYear,curMonth,curWeek,curDay));
+  if(_ahn && !confirm(`🎌 ${_ahn} — วันหยุดราชการ งดตั้งผ่าตัดตามปกติ\nยืนยันเพิ่มเคสในวันหยุดนี้หรือไม่?`)) return;
   editId=null;modalSlot={room,session};
   const st=SESSION_TIMES[session];
   buildModalDocs();
@@ -2177,14 +2199,14 @@ function setDashDay(d){dDay=d;renderDashboard();}
 
 function weekdaysInMonth(y,m){
   let n=0;const last=new Date(y,m+1,0).getDate();
-  for(let day=1;day<=last;day++){const wd=new Date(y,m,day).getDay();if(wd>=1&&wd<=5)n++;}
+  for(let day=1;day<=last;day++){const dt0=new Date(y,m,day);const wd=dt0.getDay();if(wd>=1&&wd<=5&&!isHoliday(dt0))n++;}
   return n;
 }
 function dashPeriodDates(){
-  if(dPeriod==='day') return [dispDate(dYear,dMonth,dWeek,dDay)];
-  if(dPeriod==='week') return [0,1,2,3,4].filter(i=>inDispMonth(dYear,dMonth,dWeek,i)).map(i=>dispDate(dYear,dMonth,dWeek,i));
+  if(dPeriod==='day') return [dispDate(dYear,dMonth,dWeek,dDay)].filter(dt=>!isHoliday(dt));
+  if(dPeriod==='week') return [0,1,2,3,4].filter(i=>inDispMonth(dYear,dMonth,dWeek,i)).map(i=>dispDate(dYear,dMonth,dWeek,i)).filter(dt=>!isHoliday(dt));
   const arr=[];const last=new Date(dYear,dMonth+1,0).getDate();
-  for(let day=1;day<=last;day++){const dt=new Date(dYear,dMonth,day);const wd=dt.getDay();if(wd>=1&&wd<=5)arr.push(dt);}
+  for(let day=1;day<=last;day++){const dt=new Date(dYear,dMonth,day);const wd=dt.getDay();if(wd>=1&&wd<=5&&!isHoliday(dt))arr.push(dt);}
   return arr;
 }
 function dashWeekdayCounts(){
@@ -2307,6 +2329,170 @@ function announceHasFor(dt,room,session){
 function pct(n,d){return d>0?Math.round(n/d*100):0;}
 function utilColor(p){return p>100?'#f78166':p>=70?'#3fb950':p>=40?'#e3b341':'#58a6ff';}
 
+// ── PDF EXPORT ────────────────────────────────────────
+function _loadScript(src){return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.onload=res;sc.onerror=()=>rej(new Error('load '+src));document.head.appendChild(sc);});}
+async function ensurePdfLibs(){
+  if(!window.html2canvas) await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  if(!window.jspdf) await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+}
+async function _exportElPDF(el,filename){
+  const canvas=await html2canvas(el,{scale:2,backgroundColor:'#ffffff',windowWidth:834});
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF('p','mm','a4');
+  const pw=210,ph=297,mg=8,iw=pw-mg*2;
+  const ratio=iw/canvas.width;
+  const pageHpx=Math.floor((ph-mg*2)/ratio);
+  let y=0,first=true;
+  while(y<canvas.height){
+    const h=Math.min(pageHpx,canvas.height-y);
+    const c2=document.createElement('canvas');c2.width=canvas.width;c2.height=h;
+    c2.getContext('2d').drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);
+    if(!first)pdf.addPage();first=false;
+    pdf.addImage(c2.toDataURL('image/jpeg',0.92),'JPEG',mg,mg,iw,h*ratio);
+    y+=h;
+  }
+  pdf.save(filename);
+}
+const _RS={
+  wrap:"position:absolute;left:-10000px;top:0;width:834px;padding:34px 40px;background:#ffffff;color:#1a1a1a;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;",
+  hdr:"display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0d3b66;padding-bottom:12px;margin-bottom:16px;",
+  h1:"font-size:21px;font-weight:700;margin:0;color:#0d3b66;",
+  sub:"font-size:12px;color:#555;margin-top:4px;",
+  meta:"font-size:10.5px;color:#888;text-align:right;",
+  secT:"font-size:13.5px;font-weight:700;color:#0d3b66;margin:20px 0 8px;border-left:4px solid #0d3b66;padding-left:9px;",
+  kpiRow:"display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;",
+  kpi:"flex:1;min-width:118px;background:#f4f7fb;border:1px solid #dde5ef;border-radius:8px;padding:10px 12px;",
+  kL:"font-size:10px;color:#667;",
+  kV:"font-size:19px;font-weight:700;margin-top:2px;color:#16324f;",
+  kS:"font-size:9.5px;color:#889;margin-top:1px;",
+  tbl:"width:100%;border-collapse:collapse;margin-top:2px;",
+  th:"padding:6px 9px;background:#0d3b66;color:#ffffff;font-size:10.5px;text-align:left;font-weight:600;",
+  td:"padding:5.5px 9px;border-bottom:1px solid #e3e8ef;font-size:11px;color:#222;",
+  foot:"margin-top:22px;padding-top:10px;border-top:1px solid #dde5ef;font-size:9.5px;color:#999;display:flex;justify-content:space-between;"
+};
+function _rBar(p,color){return `<div style="display:flex;align-items:center;gap:6px;"><div style="flex:1;background:#edf1f6;border-radius:4px;height:9px;overflow:hidden;"><div style="width:${Math.min(100,p)}%;height:100%;background:${color};"></div></div><span style="font-size:10px;min-width:32px;text-align:right;color:#333;">${p}%</span></div>`;}
+function _hm(min){return (min/60).toFixed(1);}
+function _nowTH(){const d=new Date();return `${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} น.`;}
+function _dashPeriodLabel(){
+  if(dPeriod==='day'){const dt=dispDate(dYear,dMonth,dWeek,dDay);return `รายวัน · วัน${DAYS[dDay]}ที่ ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(dPeriod==='week')return `รายสัปดาห์ · สัปดาห์ ${dWeek+1} (${weekRange(dYear,dMonth,dWeek)} ${THAI_MONTHS[dMonth]}) ${dYear+543}`;
+  return `รายเดือน · ${THAI_MONTHS[dMonth]} ${dYear+543}`;
+}
+function buildDashReportHTML(s){
+  const bookedU=pct(s.bookedMin,s.availMin), actU=pct(s.actMin,s.availMin);
+  const r123=s.rooms.filter(r=>r.room!=='OR-4');
+  const r123Min=r123.reduce((t,r)=>t+r.min,0), r123Act=r123.reduce((t,r)=>t+r.act,0), r123Cap=r123.reduce((t,r)=>t+r.cap,0);
+  const r4=s.rooms.find(r=>r.room==='OR-4')||{min:0,act:0,cap:0,cases:0};
+  const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
+  let h=`<div style="${_RS.hdr}"><div><div style="${_RS.h1}">🏥 รายงานการใช้ห้องผ่าตัด</div><div style="${_RS.sub}">โรงพยาบาลเกาะสมุย · ${_dashPeriodLabel()}</div></div><div style="${_RS.meta}">จัดทำเมื่อ ${_nowTH()}<br>OR Schedule · KSH</div></div>`;
+  h+=`<div style="${_RS.kpiRow}">
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">วันทำการ</div><div style="${_RS.kV}">${s.nDays}</div><div style="${_RS.kS}">ไม่นับวันหยุดราชการ</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">เคสทั้งหมด</div><div style="${_RS.kV}">${s.bookedCases}</div><div style="${_RS.kS}">ไม่รวมยกเลิก</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">ผ่าตัดเสร็จ</div><div style="${_RS.kV}" >${s.completed}</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">ยกเลิก</div><div style="${_RS.kV}">${s.cancelled}</div><div style="${_RS.kS}">${cancelRate}% ของทั้งหมด</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">เคสเกินเวลา</div><div style="${_RS.kV}">${s.overruns}</div></div>
+  </div>`;
+  h+=`<div style="${_RS.secT}">การใช้ห้องผ่าตัด (Utilization)</div>
+  <div style="${_RS.kpiRow}">
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">OR 1–3 ตามแผน</div><div style="${_RS.kV}">${pct(r123Min,r123Cap)}%</div><div style="${_RS.kS}">${_hm(r123Min)} / ${_hm(r123Cap)} ชม.</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">OR 1–3 ใช้จริง</div><div style="${_RS.kV}">${pct(r123Act,r123Cap)}%</div><div style="${_RS.kS}">${_hm(r123Act)} ชม.</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">OR-4 ตามแผน</div><div style="${_RS.kV}">${pct(r4.min,r4.cap)}%</div><div style="${_RS.kS}">${_hm(r4.min)} / ${_hm(r4.cap)} ชม.</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">OR-4 ใช้จริง</div><div style="${_RS.kV}">${pct(r4.act,r4.cap)}%</div><div style="${_RS.kS}">${_hm(r4.act)} ชม.</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">รวมทุกห้อง</div><div style="${_RS.kV}">${bookedU}% / ${actU}%</div><div style="${_RS.kS}">ตามแผน / ใช้จริง</div></div>
+  </div>`;
+  h+=`<table style="${_RS.tbl}"><tr><th style="${_RS.th}">ห้อง</th><th style="${_RS.th}">เคส</th><th style="${_RS.th}">ชม.ตามแผน</th><th style="${_RS.th};width:150px;">% ตามแผน</th><th style="${_RS.th}">ชม.ใช้จริง</th><th style="${_RS.th};width:150px;">% ใช้จริง</th></tr>`;
+  s.rooms.forEach(r=>{
+    h+=`<tr><td style="${_RS.td};font-weight:700;">${r.room}</td><td style="${_RS.td}">${r.cases}</td><td style="${_RS.td}">${_hm(r.min)}</td><td style="${_RS.td}">${_rBar(pct(r.min,r.cap),'#2e78c7')}</td><td style="${_RS.td}">${_hm(r.act)}</td><td style="${_RS.td}">${_rBar(pct(r.act,r.cap),'#2f9e63')}</td></tr>`;
+  });
+  h+=`</table>`;
+  if(s.depts.length){
+    h+=`<div style="${_RS.secT}">การใช้เวลาตามแผนก</div><table style="${_RS.tbl}"><tr><th style="${_RS.th}">แผนก</th><th style="${_RS.th}">เคส</th><th style="${_RS.th}">ชม.ที่ใช้</th><th style="${_RS.th}">ชม.ที่ได้รับจัดสรร</th><th style="${_RS.th};width:170px;">% ใช้ของโควต้า</th></tr>`;
+    s.depts.forEach(d=>{
+      h+=`<tr><td style="${_RS.td};font-weight:700;">${d.name}</td><td style="${_RS.td}">${d.cases}</td><td style="${_RS.td}">${_hm(d.min)}</td><td style="${_RS.td}">${_hm(d.alloc)}</td><td style="${_RS.td}">${_rBar(pct(d.min,d.alloc),'#7a5fc7')}</td></tr>`;
+    });
+    h+=`</table>`;
+  }
+  h+=`<div style="${_RS.secT}">การใช้ slot</div><div style="${_RS.kpiRow}">
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">Slot ที่ใช้</div><div style="${_RS.kV}">${s.used}</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">ประกาศคืนห้อง</div><div style="${_RS.kV}">${s.releasedSlots}</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">ว่าง</div><div style="${_RS.kV}">${s.empty}</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">ความเร่งด่วน</div><div style="${_RS.kV}" >${s.mix.elective||0}/${s.mix.urgent||0}/${s.mix.emergency||0}</div><div style="${_RS.kS}">Elective / Urgent / Emergency</div></div>
+  </div>`;
+  if(s.topOps.length){
+    h+=`<div style="${_RS.secT}">หัตถการที่ทำบ่อย</div><table style="${_RS.tbl}"><tr><th style="${_RS.th}">หัตถการ</th><th style="${_RS.th};width:70px;">จำนวน</th></tr>`;
+    s.topOps.forEach(([op,n])=>{h+=`<tr><td style="${_RS.td}">${op}</td><td style="${_RS.td}">${n}</td></tr>`;});
+    h+=`</table>`;
+  }
+  if(s.topDocs.length){
+    h+=`<div style="${_RS.secT}">แพทย์ตามเวลาใช้ห้องจริง</div><table style="${_RS.tbl}"><tr><th style="${_RS.th}">แพทย์</th><th style="${_RS.th};width:110px;">ชม.ใช้จริง</th></tr>`;
+    s.topDocs.forEach(([doc,m])=>{h+=`<tr><td style="${_RS.td}">${doc}</td><td style="${_RS.td}">${_hm(m)}</td></tr>`;});
+    h+=`</table>`;
+  }
+  h+=`<div style="${_RS.foot}"><span>หมายเหตุ: ตัดวันหยุดราชการออกจากวันทำการและตัวหารทั้งหมด · เวลาใช้จริง = Time in OR → Time out OR ของเคสที่เสร็จ</span><span>OR Schedule · รพ.เกาะสมุย</span></div>`;
+  return h;
+}
+async function exportDashPDF(){
+  showSync('⏳ กำลังสร้าง PDF…','#58a6ff');
+  try{
+    await ensurePdfLibs();
+    const s=computeDashStats();
+    const el=document.createElement('div');
+    el.setAttribute('style',_RS.wrap);
+    el.innerHTML=buildDashReportHTML(s);
+    document.body.appendChild(el);
+    await _exportElPDF(el,`OR-Dashboard_${dPeriod}_${dYear+543}-${String(dMonth+1).padStart(2,'0')}.pdf`);
+    el.remove();
+    showSync('✓ Export PDF สำเร็จ','#3fb950');
+  }catch(e){ console.error(e); showSync('⚠ Export ไม่สำเร็จ','#f78166'); }
+}
+function _nursePeriodLabel(){
+  if(nPeriod==='day'){const dt=dispDate(nYear,nMonth,nWeek,nDay);return `รายวัน · วัน${DAYS[nDay]}ที่ ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(nPeriod==='week')return `รายสัปดาห์ · สัปดาห์ ${nWeek+1} (${weekRange(nYear,nMonth,nWeek)} ${THAI_MONTHS[nMonth]}) ${nYear+543}`;
+  return `รายเดือน · ${THAI_MONTHS[nMonth]} ${nYear+543}`;
+}
+function buildNurseReportHTML(s){
+  const pzT=prodZone(s.prodTotal);
+  let h=`<div style="${_RS.hdr}"><div><div style="${_RS.h1}">🧑‍⚕️ รายงาน Workload พยาบาลห้องผ่าตัด</div><div style="${_RS.sub}">โรงพยาบาลเกาะสมุย · ${_nursePeriodLabel()}</div></div><div style="${_RS.meta}">จัดทำเมื่อ ${_nowTH()}<br>OR Schedule · KSH</div></div>`;
+  h+=`<div style="${_RS.kpiRow}">
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">จำนวนพยาบาล</div><div style="${_RS.kV}">${s.totalNurses}</div><div style="${_RS.kS}">${nPeriod==='day'?'วันที่เลือก':nPeriod==='week'?'รวมทั้งสัปดาห์':'รวมทั้งเดือน'}</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">เคสทั้งหมด</div><div style="${_RS.kV}">${s.totalCases}</div><div style="${_RS.kS}">ผ่าตัดเสร็จ ${s.completedTotal} + เฝือก ${s.castCases}</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">Workload รวม</div><div style="${_RS.kV}">${s.wlTotal.toFixed(1)}</div><div style="${_RS.kS}">ชั่วโมง</div></div>
+    <div style="${_RS.kpi}"><div style="${_RS.kL}">ชม.ทำงาน</div><div style="${_RS.kV}">${s.workHours}</div><div style="${_RS.kS}">${s.totalNurses} คน × 7 ชม.</div></div>
+    <div style="${_RS.kpi};border-color:${pzT.c};"><div style="${_RS.kL}">Productivity</div><div style="${_RS.kV};color:${pzT.c};">${s.totalNurses>0?Math.round(s.prodTotal)+'%':'—'}</div><div style="${_RS.kS}">${s.totalNurses>0?pzT.label:'ยังไม่มีข้อมูลพยาบาล'}</div></div>
+  </div>`;
+  h+=`<div style="${_RS.secT}">ภาระงานแยกห้อง</div><table style="${_RS.tbl}"><tr><th style="${_RS.th}">ห้อง</th><th style="${_RS.th}">เคสเสร็จ</th><th style="${_RS.th}">Workload (ชม.)</th><th style="${_RS.th}">พยาบาล</th><th style="${_RS.th};width:170px;">Productivity</th><th style="${_RS.th}">สถานะ</th></tr>`;
+  s.rooms.forEach(r=>{
+    const pz=prodZone(r.prod);
+    h+=`<tr><td style="${_RS.td};font-weight:700;">${r.room}</td><td style="${_RS.td}">${r.cases}</td><td style="${_RS.td}">${r.wl.toFixed(1)}</td><td style="${_RS.td}">${r.nurses}</td><td style="${_RS.td}">${r.nurses>0?_rBar(Math.round(r.prod),pz.c):'—'}</td><td style="${_RS.td};color:${pz.c};font-weight:600;">${r.nurses>0?pz.label:'—'}</td></tr>`;
+  });
+  const cz=prodZone(s.cast.prod);
+  h+=`<tr><td style="${_RS.td};font-weight:700;">ห้องเฝือก</td><td style="${_RS.td}">${s.cast.cases}</td><td style="${_RS.td}">${s.cast.wl.toFixed(1)}</td><td style="${_RS.td}">${s.cast.nurses}</td><td style="${_RS.td}">${s.cast.nurses>0?_rBar(Math.round(s.cast.prod),cz.c):'—'}</td><td style="${_RS.td};color:${cz.c};font-weight:600;">${s.cast.nurses>0?cz.label:'—'}</td></tr></table>`;
+  h+=`<div style="${_RS.secT}">เกณฑ์การประเมิน</div>
+  <table style="${_RS.tbl}">
+    <tr><th style="${_RS.th}">Productivity</th><th style="${_RS.th}">การแปลผล</th></tr>
+    <tr><td style="${_RS.td}">&lt; 85%</td><td style="${_RS.td}">อัตรากำลังมากกว่าภาระงาน (คนเกิน)</td></tr>
+    <tr><td style="${_RS.td}">85 – 115%</td><td style="${_RS.td}">สมดุล (ปกติ)</td></tr>
+    <tr><td style="${_RS.td}">&gt; 115%</td><td style="${_RS.td}">ภาระงานมากกว่าอัตรากำลัง (งานหนัก)</td></tr>
+  </table>`;
+  h+=`<div style="${_RS.foot}"><span>หมายเหตุ: Workload คำนวณจากเวลาผ่าตัดจริงของเคสที่เสร็จ (Time in→out OR) แบ่ง 5 ระดับ + เคสเฝือก×2.17 · ตัดวันหยุดราชการออกจากการคำนวณ</span><span>OR Schedule · รพ.เกาะสมุย</span></div>`;
+  return h;
+}
+async function exportNursePDF(){
+  showSync('⏳ กำลังสร้าง PDF…','#f778ba');
+  try{
+    await ensurePdfLibs();
+    nurseInit();
+    const s=computeNurseStats();
+    const el=document.createElement('div');
+    el.setAttribute('style',_RS.wrap);
+    el.innerHTML=buildNurseReportHTML(s);
+    document.body.appendChild(el);
+    await _exportElPDF(el,`OR-NurseWorkload_${nPeriod}_${nYear+543}-${String(nMonth+1).padStart(2,'0')}.pdf`);
+    el.remove();
+    showSync('✓ Export PDF สำเร็จ','#3fb950');
+  }catch(e){ console.error(e); showSync('⚠ Export ไม่สำเร็จ','#f78166'); }
+}
+
 function renderDashboard(){
   dashInit();
   const _dwt=weeksInMonth(dYear,dMonth); if(dWeek>=_dwt)dWeek=_dwt-1; dDay=clampDay(dYear,dMonth,dWeek,dDay);
@@ -2326,7 +2512,7 @@ function renderDashboard(){
   const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
 
   let periodLabel;
-  if(dPeriod==='day'){const dt=dispDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(dPeriod==='day'){const dt=dispDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}${isHoliday(dt)?' · 🎌 '+holidayName(dt)+' (ไม่นับคำนวณ)':''}`;}
   else if(dPeriod==='week')periodLabel=`สัปดาห์ ${dWeek+1} (${weekRange(dYear,dMonth,dWeek)} ${THAI_MONTHS[dMonth]}) · ${dYear+543}`;
   else periodLabel=`${THAI_MONTHS[dMonth]} ${dYear+543} · ${s.nDays} วันทำการ`;
 
@@ -2459,7 +2645,7 @@ function printDashboard(){
   const bookedU=pct(s.bookedMin,s.availMin), actU=pct(s.actMin,s.availMin);
   const cancelRate=pct(s.cancelled,s.bookedCases+s.cancelled);
   let periodLabel;
-  if(dPeriod==='day'){const dt=dispDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(dPeriod==='day'){const dt=dispDate(dYear,dMonth,dWeek,dDay);periodLabel=`วัน${DAYS[dDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}${isHoliday(dt)?' · 🎌 '+holidayName(dt)+' (ไม่นับคำนวณ)':''}`;}
   else if(dPeriod==='week')periodLabel=`สัปดาห์ ${dWeek+1} (${weekRange(dYear,dMonth,dWeek)} ${THAI_MONTHS[dMonth]}) ${dYear+543}`;
   else periodLabel=`${THAI_MONTHS[dMonth]} ${dYear+543} (${s.nDays} วันทำการ)`;
 
@@ -2499,10 +2685,10 @@ function setNWeek(w){nWeek=w;renderNurseDash();}
 function setNDay(d){nDay=d;renderNurseDash();}
 function nurseInit(){ if(nYear!=null)return; const _s=dispSlotForDate(new Date()); nYear=_s.y; nMonth=_s.m; nWeek=_s.w; nDay=_s.d; }
 function nursePeriodKeys(){
-  if(nPeriod==='day') return [keyOf(nYear,nMonth,nWeek,nDay)];
-  if(nPeriod==='week') return [0,1,2,3,4].filter(d=>inDispMonth(nYear,nMonth,nWeek,d)).map(d=>keyOf(nYear,nMonth,nWeek,d));
+  if(nPeriod==='day') return isHoliday(dispDate(nYear,nMonth,nWeek,nDay))?[]:[keyOf(nYear,nMonth,nWeek,nDay)];
+  if(nPeriod==='week') return [0,1,2,3,4].filter(d=>inDispMonth(nYear,nMonth,nWeek,d)&&!isHoliday(dispDate(nYear,nMonth,nWeek,d))).map(d=>keyOf(nYear,nMonth,nWeek,d));
   const keys=[]; const wks=weeksInMonth(nYear,nMonth);
-  for(let w=0;w<wks;w++) for(let d=0;d<5;d++){ if(inDispMonth(nYear,nMonth,w,d)) keys.push(keyOf(nYear,nMonth,w,d)); }
+  for(let w=0;w<wks;w++) for(let d=0;d<5;d++){ if(inDispMonth(nYear,nMonth,w,d)&&!isHoliday(dispDate(nYear,nMonth,w,d))) keys.push(keyOf(nYear,nMonth,w,d)); }
   return keys;
 }
 function computeNurseStats(){
@@ -2559,11 +2745,11 @@ function renderNurseDash(){
   if(showWeek) document.getElementById('nWeekBtns').innerHTML=buildMonthWeekNav(nYear,nMonth,nWeek,'setNWeek','nMonthLabel');
   if(showDay) document.getElementById('nDayBtns').innerHTML=buildDayNav(nYear,nMonth,nWeek,nDay,'setNDay');
   const s=computeNurseStats();
-  const editable=nPeriod==='day';
+  const editable=nPeriod==='day' && !isHoliday(dispDate(nYear,nMonth,nWeek,nDay));
   const dayKey=keyOf(nYear,nMonth,nWeek,nDay);
   const nd=nurseData[dayKey]||{}; const rn=nd.roomNurses||{};
   let periodLabel;
-  if(nPeriod==='day'){const dt=dispDate(nYear,nMonth,nWeek,nDay);periodLabel=`วัน${DAYS[nDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+  if(nPeriod==='day'){const dt=dispDate(nYear,nMonth,nWeek,nDay);periodLabel=`วัน${DAYS[nDay]} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]} ${dt.getFullYear()+543}${isHoliday(dt)?' · 🎌 '+holidayName(dt)+' (ไม่นับคำนวณ)':''}`;}
   else if(nPeriod==='week')periodLabel=`สัปดาห์ ${nWeek+1} (${weekRange(nYear,nMonth,nWeek)} ${THAI_MONTHS[nMonth]}) · ${nYear+543}`;
   else periodLabel=`${THAI_MONTHS[nMonth]} ${nYear+543}`;
   const pzT=prodZone(s.prodTotal);
