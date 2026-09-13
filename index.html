@@ -306,6 +306,7 @@ button,select,input{font-family:inherit;}
     <div class="tab" id="tabCentral" onclick="switchTab('central')">🏥 ตารางรวม</div>
     <div class="tab" id="tabDashboard" onclick="switchTab('dashboard')" style="display:none;">📊 Dashboard</div>
     <div class="tab" id="tabNurse" onclick="switchTab('nurse')" style="display:none;">🧑‍⚕️ Workload พยาบาล</div>
+    <div class="tab" id="tabDoc" onclick="switchTab('doc')" style="display:none;">👤 สรุปรายแพทย์</div>
     <div class="tab" id="tabLog" onclick="switchTab('log')" style="display:none;">🔍 Audit Log</div>
   </div>
 
@@ -429,6 +430,26 @@ button,select,input{font-family:inherit;}
   </div>
 
   <!-- DASHBOARD TAB -->
+  <!-- PER-DOCTOR TAB -->
+  <div class="tab-content" id="contentDoc">
+    <div class="controls" style="align-items:flex-end;">
+      <div class="ctrl-group" id="docPickWrap">
+        <div class="ctrl-label">แพทย์</div>
+        <select class="fsel" id="docPick" onchange="setDocDoctor(this.value)" style="min-width:180px;"></select>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">เดือน</div>
+        <div class="month-nav">
+          <button class="nav-btn" onclick="shiftDocMonth(-1)">‹</button>
+          <div id="docMonthLabel" class="month-label"></div>
+          <button class="nav-btn" onclick="shiftDocMonth(1)">›</button>
+        </div>
+      </div>
+      <button class="btn-ghost" onclick="exportDocPDF()">📄 Export PDF</button>
+    </div>
+    <div id="docBody"></div>
+  </div>
+
   <div class="tab-content" id="contentDashboard">
     <div class="controls" style="align-items:flex-end;">
       <div class="ctrl-group">
@@ -963,6 +984,8 @@ async function loadAllData(){
   document.getElementById('tabLog').style.display=currentUser.isAdmin?'block':'none';
   document.getElementById('tabDashboard').style.display=(currentUser.isExec||currentUser.isRecorder)?'block':'none';
   document.getElementById('tabNurse').style.display=currentUser.isNurse?'block':'none';
+  // สรุปรายแพทย์: แพทย์เห็นเฉพาะของตัวเอง · admin/exec เลือกดูได้ทุกคน
+  document.getElementById('tabDoc').style.display=(currentUser.isAdmin||currentUser.isExec||isStaff)?'block':'none';
   if(currentUser.isNurse) switchTab('nurse');
   else if(currentUser.isExec) switchTab('dashboard');
   else if(currentUser.isViewer) switchTab('central');
@@ -984,7 +1007,7 @@ async function loadAllData(){
   setInterval(async()=>{
     if(document.visibilityState==='hidden')return;
     try{
-      if(activeTab==='dashboard'||activeTab==='history'||activeTab==='nurse'){
+      if(activeTab==='dashboard'||activeTab==='history'||activeTab==='nurse'||activeTab==='doc'){
         const d=await fbGet('schedule');opsData=d||{};
       }else{
         const keys=[...new Set([
@@ -1082,7 +1105,7 @@ function getAnnounce(y,m,w,d,room,session){
 
 // ── TABS ──────────────────────────────────────────────
 function switchTab(t){
-  ['my','history','central','dashboard','nurse','log'].forEach(id=>{
+  ['my','history','central','dashboard','nurse','doc','log'].forEach(id=>{
     const capId=id.charAt(0).toUpperCase()+id.slice(1);
     const tab=document.getElementById('tab'+capId);
     const content=document.getElementById('content'+capId);
@@ -1097,6 +1120,7 @@ function switchTab(t){
   if(t==='history'){ renderHistory(); refreshAllSchedule().then(renderHistory); }
   if(t==='dashboard'){ renderDashboard(); refreshAllSchedule().then(renderDashboard); }
   if(t==='nurse'){ renderNurseDash(); refreshAllSchedule().then(renderNurseDash); }
+  if(t==='doc'){ renderDocDash(); refreshAllSchedule().then(renderDocDash); }
 }
 
 // ── MONTH/WEEK NAV (MY) ──────────────────────────────
@@ -2502,6 +2526,248 @@ async function exportNursePDF(){
   }catch(e){ console.error(e); showSync('⚠ Export ไม่สำเร็จ','#f78166'); }
 }
 
+async function exportDocPDF(){
+  showSync('⏳ กำลังสร้าง PDF…','#58a6ff');
+  try{
+    await ensurePdfLibs();
+    docInit(); const s=docStats();
+    const diff=s.accP>0?Math.round(s.accA/s.accP-1)*100:0;
+    const d2=s.accP>0?Math.round((s.accA/s.accP-1)*100):0;
+    const recPct=s.ops.length?Math.round((s.comp.length+s.canc.length)/s.ops.length*100):100;
+    let h=`<div style="${_RS.hdr}"><div><div style="${_RS.h1}">👤 สรุปผลงานรายแพทย์</div><div style="${_RS.sub}">${dcDoctor} · ${DEPT_NAMES[getDeptFromDoctor(dcDoctor)]||''} · ${THAI_MONTHS[dcMonth]} ${dcYear+543}</div></div><div style="${_RS.meta}">จัดทำเมื่อ ${_nowTH()}<br>OR Schedule · KSH</div></div>`;
+    h+=`<div style="${_RS.kpiRow}">
+      <div style="${_RS.kpi}"><div style="${_RS.kL}">เคสที่ set</div><div style="${_RS.kV}">${s.live.length}</div><div style="${_RS.kS}">ยกเลิก ${s.canc.length}</div></div>
+      <div style="${_RS.kpi}"><div style="${_RS.kL}">ผ่าตัดเสร็จ</div><div style="${_RS.kV}">${s.comp.length}</div><div style="${_RS.kS}">บันทึกผล ${recPct}%</div></div>
+      <div style="${_RS.kpi}"><div style="${_RS.kL}">เวลาในห้องจริง</div><div style="${_RS.kV}">${(s.actMin/60).toFixed(1)}</div><div style="${_RS.kS}">ชม. (จอง ${(s.planMin/60).toFixed(1)})</div></div>
+      <div style="${_RS.kpi}"><div style="${_RS.kL}">ความแม่นยำเวลา</div><div style="${_RS.kV}">${s.accP?(d2>0?'+':'')+d2+'%':'—'}</div><div style="${_RS.kS}">จริงเทียบที่จอง</div></div>
+      <div style="${_RS.kpi}"><div style="${_RS.kL}">ตรงเวลาเคสแรก</div><div style="${_RS.kV}">${s.firstN?Math.round(s.onTime/s.firstN*100)+'%':'—'}</div><div style="${_RS.kS}">${s.firstN?s.onTime+'/'+s.firstN+' วัน ≤08:30':'—'}</div></div>
+    </div>`;
+    if(s.opRows.length){
+      h+=`<div style="${_RS.secT}">หัตถการ · เวลาที่จอง เทียบ เวลาที่ใช้จริง (ค่ามัธยฐาน)</div>
+      <table style="${_RS.tbl}"><tr><th style="${_RS.th}">หัตถการ</th><th style="${_RS.th}">เคส</th><th style="${_RS.th}">จอง (นาที)</th><th style="${_RS.th}">ใช้จริง (นาที)</th><th style="${_RS.th}">ส่วนต่าง</th></tr>`;
+      s.opRows.forEach(r=>{const d=r.mp>0?Math.round((r.ma/r.mp-1)*100):0;
+        h+=`<tr><td style="${_RS.td}">${r.op}</td><td style="${_RS.td}">${r.n}</td><td style="${_RS.td}">${r.mp}</td><td style="${_RS.td}">${r.ma}</td><td style="${_RS.td};font-weight:700;color:${d>15?'#a32d2d':'#0f6e56'};">${d>0?'+':''}${d}%</td></tr>`;});
+      h+=`</table>`;
+    }
+    if(s.slotCount){
+      h+=`<div style="${_RS.secT}">โควต้าห้อง</div><table style="${_RS.tbl}">
+      <tr><th style="${_RS.th}">รายการ</th><th style="${_RS.th}">ค่า</th></tr>
+      <tr><td style="${_RS.td}">slot ที่ได้รับต่อสัปดาห์</td><td style="${_RS.td}">${s.slotCount} ช่อง${s.shareWith?` (ใช้ร่วม ${s.shareWith+1} ท่าน)`:''}</td></tr>
+      <tr><td style="${_RS.td}">โควต้าเดือนนี้</td><td style="${_RS.td}">${(s.quotaMin/60).toFixed(1)} ชม.</td></tr>
+      <tr><td style="${_RS.td}">จองไปแล้ว</td><td style="${_RS.td}">${(s.planMin/60).toFixed(1)} ชม. (${pct(s.planMin,s.quotaMin)}% ของโควต้า)</td></tr></table>`;
+    }
+    h+=`<div style="${_RS.foot}"><span>หมายเหตุ: ไม่นับวันหยุดราชการ · เวลาจริง = Time in OR → Time out OR ของเคสที่บันทึกผลแล้ว${s.pend.length?` · ยังมี ${s.pend.length} เคสไม่บันทึกผล`:''}</span><span>OR Schedule · รพ.เกาะสมุย</span></div>`;
+    const el=document.createElement('div'); el.setAttribute('style',_RS.wrap); el.innerHTML=h;
+    document.body.appendChild(el);
+    await _exportElPDF(el,`OR-Doctor_${dcDoctor}_${dcYear+543}-${String(dcMonth+1).padStart(2,'0')}.pdf`);
+    el.remove(); showSync('✓ Export PDF สำเร็จ','#3fb950');
+  }catch(e){ console.error(e); showSync('⚠ Export ไม่สำเร็จ','#f78166'); }
+}
+// ── สรุปรายแพทย์ (per-doctor monthly) ─────────────────
+let dcYear=null, dcMonth=null, dcDoctor=null;
+const ON_TIME_MIN=510; // 08:30 น. ตามกติกาในตารางห้องผ่าตัด
+function docInit(){
+  if(dcYear==null){ const t=new Date(); dcYear=t.getFullYear(); dcMonth=t.getMonth(); }
+  if(dcDoctor==null){
+    const mine=docMyNames();
+    dcDoctor = mine.length ? mine[0] : (docAllNames()[0]||null);
+  }
+}
+function docCanPickAll(){ return !!(currentUser&&(currentUser.isAdmin||currentUser.isExec)); }
+function docMyNames(){
+  if(!currentUser||!Array.isArray(currentUser.names)) return [];
+  return currentUser.names.filter(n=>n&&n!=='ALL');
+}
+function docAllNames(){
+  const out=[];
+  Object.values(USERS_BY_ID).forEach(u=>{
+    if(u.isAdmin||u.isViewer||u.isExec||u.isRecorder||u.isNurse||u.deptScope) return;
+    (u.names||[]).forEach(n=>{ if(n&&n!=='ALL'&&!out.includes(n)) out.push(n); });
+  });
+  return out.sort();
+}
+// ชื่อแพทย์ที่พิมพ์เองในตาราง (ไม่มีบัญชีใน /users) — ไม่งั้นเคสเหล่านี้จะหายไปจากทุกหน้า
+function docExtraNames(){
+  const roster=docAllNames(), seen={};
+  Object.values(opsData).forEach(arr=>{ if(!Array.isArray(arr))return;
+    arr.forEach(o=>{ const n=o&&o.doctor; if(n&&n!=='undefined'&&!roster.includes(n)) seen[n]=1; }); });
+  return Object.keys(seen).sort();
+}
+function docSelectable(){ return docCanPickAll()? docAllNames().concat(docExtraNames()) : docMyNames(); }
+function shiftDocMonth(dir){
+  dcMonth+=dir; if(dcMonth>11){dcMonth=0;dcYear++;} if(dcMonth<0){dcMonth=11;dcYear--;}
+  if(dcYear<START_YEAR||(dcYear===START_YEAR&&dcMonth<START_MONTH)){dcYear=START_YEAR;dcMonth=START_MONTH;}
+  renderDocDash();
+}
+function setDocDoctor(v){ dcDoctor=v; renderDocDash(); }
+// เคสทั้งหมดของแพทย์คนนี้ในเดือนที่เลือก (ยึดวันที่จริงจากคีย์)
+function docMonthOps(){
+  const res=[];
+  Object.entries(opsData).forEach(([key,arr])=>{
+    if(!Array.isArray(arr))return;
+    const p=key.split('_'); if(p.length!==4)return;
+    const [y,mm,w,dd]=p.map(Number);
+    const dt=getDate(y,mm,w,dd); dt.setHours(0,0,0,0);
+    if(dt.getFullYear()!==dcYear||dt.getMonth()!==dcMonth)return;
+    if(isHoliday(dt))return;
+    arr.forEach(o=>{ if(o&&o.doctor===dcDoctor) res.push({...o,_dt:dt}); });
+  });
+  return res;
+}
+const _med=a=>{ if(!a.length)return 0; const b=[...a].sort((x,y)=>x-y),h=b.length>>1; return b.length%2?b[h]:Math.round((b[h-1]+b[h])/2); };
+// บัญชีผู้ใช้ที่ถือ slot ของแพทย์คนนี้ (อาจใช้ร่วมกันหลายคน)
+function docAccount(){
+  return Object.values(USERS_BY_ID).find(u=>!u.isAdmin&&!u.isViewer&&!u.isExec&&!u.isRecorder&&!u.isNurse&&!u.deptScope
+    && Array.isArray(u.names)&&u.names.includes(dcDoctor)) || null;
+}
+function docStats(){
+  const ops=docMonthOps();
+  const live=ops.filter(o=>o.status!=='cancelled');
+  const comp=ops.filter(o=>o.status==='completed');
+  const canc=ops.filter(o=>o.status==='cancelled');
+  const pend=ops.filter(o=>!o.status||o.status==='scheduled');
+  const planMin=live.reduce((a,o)=>a+plannedDur(o),0);
+  const actMin=comp.reduce((a,o)=>a+actualDur(o),0);
+  // ความแม่นยำ: เทียบเฉพาะเคสที่เสร็จและมีเวลาจริง
+  const pairs=comp.map(o=>({p:plannedDur(o),a:actualDur(o)})).filter(x=>x.p>0&&x.a>0);
+  const accP=pairs.reduce((a,x)=>a+x.p,0), accA=pairs.reduce((a,x)=>a+x.a,0);
+  // หัตถการ
+  const byOp={};
+  comp.forEach(o=>{ const k=o.op||'(ไม่ระบุ)'; (byOp[k]=byOp[k]||{n:0,p:[],a:[]}); byOp[k].n++; byOp[k].p.push(plannedDur(o)); byOp[k].a.push(actualDur(o)); });
+  const opRows=Object.entries(byOp).map(([k,v])=>({op:k,n:v.n,mp:_med(v.p),ma:_med(v.a)}))
+    .sort((x,y)=>y.n-x.n||y.ma-x.ma).slice(0,10);
+  // ตรงเวลาเคสแรกของวัน (เฉพาะคาบเช้า และเป็นเคสแรกของห้องนั้นในวันนั้น)
+  const firstMap={};
+  ops.forEach(o=>{ if(o.session!=='am')return; const k=o._dt.getTime()+'|'+o.room;
+    if(!firstMap[k]||o.startMin<firstMap[k].startMin) firstMap[k]=o; });
+  const firsts=Object.values(firstMap).filter(o=>o.status==='completed'&&o.timeInOR!=null);
+  const onTime=firsts.filter(o=>o.timeInOR<=ON_TIME_MIN).length;
+  // โควต้าจาก slot ที่ถือ
+  const acct=docAccount();
+  let slotCount=0, quotaMin=0, shareWith=0, usedSlots=0;
+  if(acct&&Array.isArray(acct.slots)){
+    const uniq={}; acct.slots.forEach(sl=>{ if(sl&&sl.room&&sl.session&&sl.day!=null) uniq[`${sl.day}|${sl.room}|${sl.session}`]=sl; });
+    const list=Object.values(uniq); slotCount=list.length;
+    shareWith=Math.max(0,(acct.names||[]).filter(n=>n&&n!=='ALL').length-1);
+    const wd=[0,0,0,0,0], last=new Date(dcYear,dcMonth+1,0).getDate();
+    for(let d=1;d<=last;d++){ const t=new Date(dcYear,dcMonth,d); const w=t.getDay();
+      if(w>=1&&w<=5&&!isHoliday(t)) wd[w-1]++; }
+    list.forEach(sl=>{ quotaMin += (SESS_LEN[sl.session]||0)*wd[sl.day]; });
+    const own={}; list.forEach(sl=>own[`${sl.day}|${sl.room}|${sl.session}`]=1);
+    const seen={};
+    live.forEach(o=>{ const k=`${(o._dt.getDay()-1)}|${o.room}|${o.session}`;
+      if(own[k]) seen[o._dt.getTime()+'|'+o.room+'|'+o.session]=1; });
+    usedSlots=Object.keys(seen).length;
+  }
+  const days=[...new Set(live.map(o=>o._dt.getTime()))].length;
+  const urg={elective:0,urgent:0,emergency:0};
+  live.forEach(o=>{ urg[o.urgency||'elective']=(urg[o.urgency||'elective']||0)+1; });
+  return {ops,live,comp,canc,pend,planMin,actMin,accP,accA,opRows,
+    firstN:firsts.length,onTime,slotCount,quotaMin,shareWith,usedSlots,days,urg,
+    rooms:['OR-1','OR-2','OR-3','OR-4'].map(r=>({room:r,n:live.filter(o=>o.room===r).length,
+      act:comp.filter(o=>o.room===r).reduce((a,o)=>a+actualDur(o),0)})).filter(x=>x.n>0),
+    cancr:canc.reduce((m,o)=>{const k=o.cancelReason||'(ไม่ระบุ)';m[k]=(m[k]||0)+1;return m;},{})};
+}
+function docTrend(){
+  const out=[];
+  for(let i=5;i>=0;i--){
+    let y=dcYear,m=dcMonth-i; while(m<0){m+=12;y--;}
+    let n=0,act=0;
+    Object.entries(opsData).forEach(([key,arr])=>{
+      if(!Array.isArray(arr))return; const p=key.split('_'); if(p.length!==4)return;
+      const [ky,km,kw,kd]=p.map(Number); const dt=getDate(ky,km,kw,kd);
+      if(dt.getFullYear()!==y||dt.getMonth()!==m)return; if(isHoliday(dt))return;
+      arr.forEach(o=>{ if(o&&o.doctor===dcDoctor&&o.status!=='cancelled'){ n++; if(o.status==='completed') act+=actualDur(o); } });
+    });
+    out.push({y,m,n,act});
+  }
+  return out;
+}
+function renderDocDash(){
+  docInit();
+  const sel=document.getElementById('docPick'), names=docSelectable();
+  if(!names.length){ document.getElementById('docBody').innerHTML='<div style="color:var(--muted);padding:24px 0;text-align:center;">ไม่มีข้อมูลแพทย์สำหรับบัญชีนี้</div>'; return; }
+  if(!names.includes(dcDoctor)) dcDoctor=names[0];
+  const _ext=docCanPickAll()?docExtraNames():[];
+  sel.innerHTML=names.map(n=>`<option value="${n}"${n===dcDoctor?' selected':''}>${n}${_ext.includes(n)?' · ไม่มีบัญชี':''}</option>`).join('');
+  document.getElementById('docPickWrap').style.display=names.length>1?'flex':'none';
+  document.getElementById('docMonthLabel').textContent=`${THAI_MONTHS[dcMonth]} ${dcYear+543}`;
+  const s=docStats();
+  const accPct = s.accP>0 ? Math.round(s.accA/s.accP*100) : 0;
+  const diff = s.accP>0 ? Math.round((s.accA/s.accP-1)*100) : 0;
+  const dcol = getDeptFromDoctor(dcDoctor);
+  const accent = DEPT_COLORS[dcol]||'#58a6ff';
+  const recPct = s.ops.length? Math.round((s.comp.length+s.canc.length)/s.ops.length*100):100;
+
+  let h=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">👤 <strong style="color:${accent};">${dcDoctor}</strong> · ${DEPT_NAMES[dcol]||''} · ${THAI_MONTHS[dcMonth]} ${dcYear+543} · ออกห้อง ${s.days} วัน</div>`;
+  h+=`<div class="kpi-grid">
+    <div class="kpi-card accent"><div class="kpi-label">เคสที่ set</div><div class="kpi-val" style="color:${accent}">${s.live.length}</div><div class="kpi-sub">ไม่รวมยกเลิก ${s.canc.length} เคส</div></div>
+    <div class="kpi-card"><div class="kpi-label">ผ่าตัดเสร็จ</div><div class="kpi-val" style="color:#3fb950">${s.comp.length}</div><div class="kpi-sub">บันทึกผลแล้ว ${recPct}%</div></div>
+    <div class="kpi-card"><div class="kpi-label">เวลาในห้องจริง</div><div class="kpi-val" style="color:#58a6ff">${(s.actMin/60).toFixed(1)}</div><div class="kpi-sub">ชั่วโมง (จอง ${(s.planMin/60).toFixed(1)} ชม.)</div></div>
+    <div class="kpi-card"><div class="kpi-label">ความแม่นยำเวลา</div><div class="kpi-val" style="color:${diff>15?'#f78166':diff<-15?'#e3b341':'#3fb950'}">${s.accP?(diff>0?'+':'')+diff+'%':'—'}</div><div class="kpi-sub">${s.accP?'เวลาจริงเทียบที่จอง':'ยังไม่มีเคสที่บันทึกผล'}</div></div>
+    <div class="kpi-card"><div class="kpi-label">ตรงเวลาเคสแรก</div><div class="kpi-val" style="color:${s.firstN&&s.onTime/s.firstN>=0.8?'#3fb950':'#e3b341'}">${s.firstN?Math.round(s.onTime/s.firstN*100)+'%':'—'}</div><div class="kpi-sub">${s.firstN?`${s.onTime}/${s.firstN} วัน เข้าห้อง ≤ 08:30`:'ไม่มีเคสเช้า'}</div></div>
+  </div>`;
+
+  if(s.pend.length){
+    h+=`<div style="background:rgba(247,129,102,.1);border:1px solid #f78166;border-radius:8px;padding:10px 16px;margin:12px 0;font-size:.82rem;color:#f78166;">
+      ⚠ มี <strong>${s.pend.length}</strong> เคสที่ยังไม่บันทึกผล — ตัวเลข "เวลาในห้องจริง" และความแม่นยำจึงต่ำกว่าความเป็นจริง</div>`;
+  }
+
+  h+=`<div class="dash-section"><div class="dash-title">หัตถการของคุณ · เวลาที่จอง เทียบ เวลาที่ใช้จริง</div>`;
+  if(!s.opRows.length){ h+=`<div style="color:var(--muted);font-size:.85rem;padding:10px 0;">ยังไม่มีเคสที่บันทึกผลในเดือนนี้</div>`; }
+  else {
+    h+=`<div style="font-size:.7rem;color:var(--muted);margin-bottom:8px;">ใช้ค่ามัธยฐาน (median) เพื่อไม่ให้เคสที่ยาวผิดปกติดึงค่าเพี้ยน · ใช้ตัวเลข "ใช้จริง" ตั้งเวลาครั้งหน้าได้เลย</div>
+      <div class="summary-table">
+      <div class="s-row" style="font-weight:700;color:var(--muted);font-size:.72rem;">
+        <span style="flex:1;">หัตถการ</span><span style="width:46px;text-align:center;">เคส</span>
+        <span style="width:70px;text-align:right;">จอง</span><span style="width:70px;text-align:right;">ใช้จริง</span><span style="width:62px;text-align:right;">ส่วนต่าง</span></div>`;
+    s.opRows.forEach(r=>{
+      const d=r.mp>0?Math.round((r.ma/r.mp-1)*100):0;
+      const c=d>15?'#f78166':d<-15?'#e3b341':'#3fb950';
+      h+=`<div class="s-row">
+        <span style="flex:1;overflow-wrap:anywhere;">${r.op}</span>
+        <span style="width:46px;text-align:center;">${r.n}</span>
+        <span style="width:70px;text-align:right;font-family:monospace;">${r.mp} น.</span>
+        <span style="width:70px;text-align:right;font-family:monospace;">${r.ma} น.</span>
+        <span style="width:62px;text-align:right;font-weight:700;color:${c};">${d>0?'+':''}${d}%</span></div>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`</div>`;
+
+  h+=`<div class="dash-section"><div class="dash-title">โควต้าห้องของคุณ</div><div class="dash-grid2">`;
+  if(s.slotCount){
+    const qp=pct(s.planMin,s.quotaMin);
+    h+=`<div class="dash-card">
+      <div style="font-size:.76rem;color:var(--muted);margin-bottom:6px;">slot ที่ได้รับ</div>
+      <div style="font-size:1.5rem;font-weight:700;color:${accent};">${s.slotCount} ช่อง/สัปดาห์</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">= ${(s.quotaMin/60).toFixed(1)} ชม. ในเดือนนี้${s.shareWith?` · ใช้ร่วมกับแพทย์อีก ${s.shareWith} ท่าน`:''}</div>
+    </div>
+    <div class="dash-card">
+      <div style="font-size:.76rem;color:var(--muted);margin-bottom:6px;">ใช้ไปเทียบโควต้า</div>
+      <div style="font-size:1.5rem;font-weight:700;color:${utilColor(qp)};">${qp}%</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">จองไป ${(s.planMin/60).toFixed(1)} ชม. · ลงเคสจริง ${s.usedSlots} ช่อง</div>
+    </div>`;
+  } else {
+    h+=`<div class="dash-card"><div style="font-size:.8rem;color:var(--muted);">ไม่พบ slot ประจำของแพทย์ท่านนี้ในระบบ</div></div>`;
+  }
+  h+=`</div></div>`;
+
+  const tr=docTrend(), mx=Math.max(1,...tr.map(t=>t.n));
+  h+=`<div class="dash-section"><div class="dash-title">แนวโน้ม 6 เดือน</div><div class="trend-row">`;
+  tr.forEach(t=>{ h+=`<div class="trend-col"><div class="trend-bars">
+    <div class="trend-bar" style="height:${t.n/mx*100}%;background:${accent}" title="${t.n} เคส"></div></div>
+    <div class="trend-lab">${THAI_MONTHS[t.m]}<br>${t.n} เคส<br><span style="opacity:.7;">${(t.act/60).toFixed(0)} ชม.</span></div></div>`; });
+  h+=`</div></div>`;
+
+  if(s.canc.length){
+    h+=`<div class="dash-section"><div class="dash-title">การยกเลิก (${s.canc.length} เคส)</div><div class="summary-table">`;
+    Object.entries(s.cancr).sort((a,b)=>b[1]-a[1]).forEach(([r,n])=>{
+      h+=`<div class="s-row"><span style="flex:1;overflow-wrap:anywhere;">${r}</span><span style="width:46px;text-align:right;font-weight:700;">${n}</span></div>`; });
+    h+=`</div></div>`;
+  }
+  document.getElementById('docBody').innerHTML=h;
+}
 function renderDashboard(){
   dashInit();
   const _dwt=weeksInMonth(dYear,dMonth); if(dWeek>=_dwt)dWeek=_dwt-1; dDay=clampDay(dYear,dMonth,dWeek,dDay);
