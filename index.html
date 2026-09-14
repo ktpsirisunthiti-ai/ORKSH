@@ -2540,13 +2540,26 @@ async function exportDocPDF(){
       <div style="${_RS.kpi}"><div style="${_RS.kL}">ผ่าตัดเสร็จ</div><div style="${_RS.kV}">${s.comp.length}</div><div style="${_RS.kS}">บันทึกผล ${recPct}%</div></div>
       <div style="${_RS.kpi}"><div style="${_RS.kL}">เวลาในห้องจริง</div><div style="${_RS.kV}">${(s.actMin/60).toFixed(1)}</div><div style="${_RS.kS}">ชม. (จอง ${(s.planMin/60).toFixed(1)})</div></div>
       <div style="${_RS.kpi}"><div style="${_RS.kL}">ความแม่นยำเวลา</div><div style="${_RS.kV}">${s.accP?(d2>0?'+':'')+d2+'%':'—'}</div><div style="${_RS.kS}">จริงเทียบที่จอง</div></div>
-      <div style="${_RS.kpi}"><div style="${_RS.kL}">ตรงเวลาเคสแรก</div><div style="${_RS.kV}">${s.firstN?Math.round(s.onTime/s.firstN*100)+'%':'—'}</div><div style="${_RS.kS}">${s.firstN?s.onTime+'/'+s.firstN+' วัน ≤08:30':'—'}</div></div>
     </div>`;
     if(s.opRows.length){
       h+=`<div style="${_RS.secT}">หัตถการ · เวลาที่จอง เทียบ เวลาที่ใช้จริง (ค่ามัธยฐาน)</div>
       <table style="${_RS.tbl}"><tr><th style="${_RS.th}">หัตถการ</th><th style="${_RS.th}">เคส</th><th style="${_RS.th}">จอง (นาที)</th><th style="${_RS.th}">ใช้จริง (นาที)</th><th style="${_RS.th}">ส่วนต่าง</th></tr>`;
       s.opRows.forEach(r=>{const d=r.mp>0?Math.round((r.ma/r.mp-1)*100):0;
         h+=`<tr><td style="${_RS.td}">${r.op}</td><td style="${_RS.td}">${r.n}</td><td style="${_RS.td}">${r.mp}</td><td style="${_RS.td}">${r.ma}</td><td style="${_RS.td};font-weight:700;color:${d>15?'#a32d2d':'#0f6e56'};">${d>0?'+':''}${d}%</td></tr>`;});
+      h+=`</table>`;
+    }
+    h+=`<div style="${_RS.secT}">ความเร่งด่วนของเคส</div><table style="${_RS.tbl}">
+      <tr><th style="${_RS.th}">ประเภท</th><th style="${_RS.th}">จำนวน</th><th style="${_RS.th}">สัดส่วน</th></tr>`;
+    const _t=s.live.length||1;
+    [['elective','Elective'],['urgent','Urgent'],['emergency','Emergency']].forEach(([k,lab])=>{
+      const v=s.urg[k]||0;
+      h+=`<tr><td style="${_RS.td}">${lab}</td><td style="${_RS.td}">${v}</td><td style="${_RS.td}">${Math.round(v/_t*100)}%</td></tr>`; });
+    h+=`</table>`;
+    if(s.pend.length){
+      const pl=[...s.pend].sort((a,b)=>a._dt-b._dt||a.startMin-b.startMin);
+      h+=`<div style="${_RS.secT}">เคสที่ยังไม่บันทึกผล (${pl.length})</div>
+      <table style="${_RS.tbl}"><tr><th style="${_RS.th}">วันที่</th><th style="${_RS.th}">ห้อง</th><th style="${_RS.th}">คาบ</th><th style="${_RS.th}">เวลาที่จอง</th><th style="${_RS.th}">หัตถการ</th></tr>`;
+      pl.forEach(o=>{ h+=`<tr><td style="${_RS.td}">${_thDate(o._dt)}</td><td style="${_RS.td}">${o.room||'-'}</td><td style="${_RS.td}">${o.session==='am'?'เช้า':'บ่าย'}</td><td style="${_RS.td}">${minToTime(o.startMin)}–${minToTime(o.endMin)}</td><td style="${_RS.td}">${o.op||'-'}</td></tr>`; });
       h+=`</table>`;
     }
     if(s.slotCount){
@@ -2565,7 +2578,6 @@ async function exportDocPDF(){
 }
 // ── สรุปรายแพทย์ (per-doctor monthly) ─────────────────
 let dcYear=null, dcMonth=null, dcDoctor=null;
-const ON_TIME_MIN=510; // 08:30 น. ตามกติกาในตารางห้องผ่าตัด
 function docInit(){
   if(dcYear==null){ const t=new Date(); dcYear=t.getFullYear(); dcMonth=t.getMonth(); }
   if(dcDoctor==null){
@@ -2614,6 +2626,7 @@ function docMonthOps(){
   });
   return res;
 }
+const _thDate=dt=>`${DAYS[(dt.getDay()+6)%7]||''} ${dt.getDate()} ${THAI_MONTHS[dt.getMonth()]}`;
 const _med=a=>{ if(!a.length)return 0; const b=[...a].sort((x,y)=>x-y),h=b.length>>1; return b.length%2?b[h]:Math.round((b[h-1]+b[h])/2); };
 // บัญชีผู้ใช้ที่ถือ slot ของแพทย์คนนี้ (อาจใช้ร่วมกันหลายคน)
 function docAccount(){
@@ -2636,12 +2649,11 @@ function docStats(){
   comp.forEach(o=>{ const k=o.op||'(ไม่ระบุ)'; (byOp[k]=byOp[k]||{n:0,p:[],a:[]}); byOp[k].n++; byOp[k].p.push(plannedDur(o)); byOp[k].a.push(actualDur(o)); });
   const opRows=Object.entries(byOp).map(([k,v])=>({op:k,n:v.n,mp:_med(v.p),ma:_med(v.a)}))
     .sort((x,y)=>y.n-x.n||y.ma-x.ma).slice(0,10);
-  // ตรงเวลาเคสแรกของวัน (เฉพาะคาบเช้า และเป็นเคสแรกของห้องนั้นในวันนั้น)
-  const firstMap={};
-  ops.forEach(o=>{ if(o.session!=='am')return; const k=o._dt.getTime()+'|'+o.room;
-    if(!firstMap[k]||o.startMin<firstMap[k].startMin) firstMap[k]=o; });
-  const firsts=Object.values(firstMap).filter(o=>o.status==='completed'&&o.timeInOR!=null);
-  const onTime=firsts.filter(o=>o.timeInOR<=ON_TIME_MIN).length;
+  // วันทำการของเดือนนี้ (ตัดวันหยุดราชการ)
+  const wd=[0,0,0,0,0], _last=new Date(dcYear,dcMonth+1,0).getDate();
+  for(let d=1;d<=_last;d++){ const t=new Date(dcYear,dcMonth,d); const w=t.getDay();
+    if(w>=1&&w<=5&&!isHoliday(t)) wd[w-1]++; }
+  const workDays=wd.reduce((a,b)=>a+b,0);
   // โควต้าจาก slot ที่ถือ
   const acct=docAccount();
   let slotCount=0, quotaMin=0, shareWith=0, usedSlots=0;
@@ -2649,9 +2661,6 @@ function docStats(){
     const uniq={}; acct.slots.forEach(sl=>{ if(sl&&sl.room&&sl.session&&sl.day!=null) uniq[`${sl.day}|${sl.room}|${sl.session}`]=sl; });
     const list=Object.values(uniq); slotCount=list.length;
     shareWith=Math.max(0,(acct.names||[]).filter(n=>n&&n!=='ALL').length-1);
-    const wd=[0,0,0,0,0], last=new Date(dcYear,dcMonth+1,0).getDate();
-    for(let d=1;d<=last;d++){ const t=new Date(dcYear,dcMonth,d); const w=t.getDay();
-      if(w>=1&&w<=5&&!isHoliday(t)) wd[w-1]++; }
     list.forEach(sl=>{ quotaMin += (SESS_LEN[sl.session]||0)*wd[sl.day]; });
     const own={}; list.forEach(sl=>own[`${sl.day}|${sl.room}|${sl.session}`]=1);
     const seen={};
@@ -2663,7 +2672,7 @@ function docStats(){
   const urg={elective:0,urgent:0,emergency:0};
   live.forEach(o=>{ urg[o.urgency||'elective']=(urg[o.urgency||'elective']||0)+1; });
   return {ops,live,comp,canc,pend,planMin,actMin,accP,accA,opRows,
-    firstN:firsts.length,onTime,slotCount,quotaMin,shareWith,usedSlots,days,urg,
+    slotCount,quotaMin,shareWith,usedSlots,days,workDays,urg,
     rooms:['OR-1','OR-2','OR-3','OR-4'].map(r=>({room:r,n:live.filter(o=>o.room===r).length,
       act:comp.filter(o=>o.room===r).reduce((a,o)=>a+actualDur(o),0)})).filter(x=>x.n>0),
     cancr:canc.reduce((m,o)=>{const k=o.cancelReason||'(ไม่ระบุ)';m[k]=(m[k]||0)+1;return m;},{})};
@@ -2699,18 +2708,47 @@ function renderDocDash(){
   const accent = DEPT_COLORS[dcol]||'#58a6ff';
   const recPct = s.ops.length? Math.round((s.comp.length+s.canc.length)/s.ops.length*100):100;
 
-  let h=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">👤 <strong style="color:${accent};">${dcDoctor}</strong> · ${DEPT_NAMES[dcol]||''} · ${THAI_MONTHS[dcMonth]} ${dcYear+543} · ออกห้อง ${s.days} วัน</div>`;
+  let h=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">👤 <strong style="color:${accent};">${dcDoctor}</strong> · ${DEPT_NAMES[dcol]||''} · ${THAI_MONTHS[dcMonth]} ${dcYear+543} · มีเคส ${s.days} วัน (จาก ${s.workDays} วันทำการ)</div>`;
   h+=`<div class="kpi-grid">
     <div class="kpi-card accent"><div class="kpi-label">เคสที่ set</div><div class="kpi-val" style="color:${accent}">${s.live.length}</div><div class="kpi-sub">ไม่รวมยกเลิก ${s.canc.length} เคส</div></div>
     <div class="kpi-card"><div class="kpi-label">ผ่าตัดเสร็จ</div><div class="kpi-val" style="color:#3fb950">${s.comp.length}</div><div class="kpi-sub">บันทึกผลแล้ว ${recPct}%</div></div>
     <div class="kpi-card"><div class="kpi-label">เวลาในห้องจริง</div><div class="kpi-val" style="color:#58a6ff">${(s.actMin/60).toFixed(1)}</div><div class="kpi-sub">ชั่วโมง (จอง ${(s.planMin/60).toFixed(1)} ชม.)</div></div>
     <div class="kpi-card"><div class="kpi-label">ความแม่นยำเวลา</div><div class="kpi-val" style="color:${diff>15?'#f78166':diff<-15?'#e3b341':'#3fb950'}">${s.accP?(diff>0?'+':'')+diff+'%':'—'}</div><div class="kpi-sub">${s.accP?'เวลาจริงเทียบที่จอง':'ยังไม่มีเคสที่บันทึกผล'}</div></div>
-    <div class="kpi-card"><div class="kpi-label">ตรงเวลาเคสแรก</div><div class="kpi-val" style="color:${s.firstN&&s.onTime/s.firstN>=0.8?'#3fb950':'#e3b341'}">${s.firstN?Math.round(s.onTime/s.firstN*100)+'%':'—'}</div><div class="kpi-sub">${s.firstN?`${s.onTime}/${s.firstN} วัน เข้าห้อง ≤ 08:30`:'ไม่มีเคสเช้า'}</div></div>
   </div>`;
 
+  // ── ความเร่งด่วน ──
+  const _ut=s.live.length||1;
+  const _um=[['elective','Elective','#3fb950'],['urgent','Urgent','#e3b341'],['emergency','Emergency','#f78166']];
+  h+=`<div class="dash-section"><div class="dash-title">ความเร่งด่วนของเคส</div>
+    <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--surface2);margin-bottom:8px;">`;
+  _um.forEach(([k,,c])=>{ const v=s.urg[k]||0; if(v) h+=`<div style="width:${v/_ut*100}%;background:${c};" title="${k} ${v}"></div>`; });
+  h+=`</div><div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.78rem;">`;
+  _um.forEach(([k,lab,c])=>{ const v=s.urg[k]||0;
+    h+=`<span style="display:inline-flex;align-items:center;gap:6px;color:var(--muted);">
+      <span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block;"></span>
+      ${lab} <strong style="color:var(--text);">${v}</strong> <span style="opacity:.7;">(${Math.round(v/_ut*100)}%)</span></span>`; });
+  h+=`</div></div>`;
+
+  // ── เคสที่ยังไม่บันทึกผล ──
   if(s.pend.length){
     h+=`<div style="background:rgba(247,129,102,.1);border:1px solid #f78166;border-radius:8px;padding:10px 16px;margin:12px 0;font-size:.82rem;color:#f78166;">
       ⚠ มี <strong>${s.pend.length}</strong> เคสที่ยังไม่บันทึกผล — ตัวเลข "เวลาในห้องจริง" และความแม่นยำจึงต่ำกว่าความเป็นจริง</div>`;
+    const pl=[...s.pend].sort((a,b)=>a._dt-b._dt||a.startMin-b.startMin);
+    h+=`<div class="dash-section"><div class="dash-title">รายการเคสที่ยังไม่บันทึกผล (${pl.length})</div>
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:8px;">แจ้งเจ้าหน้าที่บันทึกผลตามรายการนี้ เพื่อให้สถิติของเดือนนี้ครบถ้วน</div>
+      <div class="summary-table">
+      <div class="s-row" style="font-weight:700;color:var(--muted);font-size:.72rem;">
+        <span style="width:96px;">วันที่</span><span style="width:58px;">ห้อง</span>
+        <span style="width:48px;">คาบ</span><span style="width:96px;">เวลาที่จอง</span>
+        <span style="flex:1;">หัตถการ</span></div>`;
+    pl.forEach(o=>{
+      h+=`<div class="s-row">
+        <span style="width:96px;">${_thDate(o._dt)}</span>
+        <span style="width:58px;font-family:monospace;">${o.room||'-'}</span>
+        <span style="width:48px;">${o.session==='am'?'เช้า':'บ่าย'}</span>
+        <span style="width:96px;font-family:monospace;">${minToTime(o.startMin)}–${minToTime(o.endMin)}</span>
+        <span style="flex:1;overflow-wrap:anywhere;">${o.op||'-'}</span></div>`; });
+    h+=`</div></div>`;
   }
 
   h+=`<div class="dash-section"><div class="dash-title">หัตถการของคุณ · เวลาที่จอง เทียบ เวลาที่ใช้จริง</div>`;
